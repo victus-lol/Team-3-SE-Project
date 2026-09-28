@@ -1,6 +1,6 @@
 # Team-3-SE-Project
-Problem statament Task Manager Application
-PES2UG25CS804 -- Balaji Gowda S R
-PES2UG24CS016	-- AARYAN DUBEY
-PES2UG24CS006	-- AADI KORE
-PES2UG24CS041 -- AKASH PAWAR
+ Problem statament -- Task Manager Application  
+PES2UG25CS804 -- Balaji Gowda S R  
+PES2UG24CS016	-- AARYAN DUBEY  
+PES2UG24CS006	-- AADI KORE  
+PES2UG24CS041 -- AKASH PAWAR  
