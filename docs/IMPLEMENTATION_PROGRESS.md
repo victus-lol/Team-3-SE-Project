@@ -5,9 +5,9 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 ## Current state
 
 - The project is a React/Vite website backed by a Flask API, not a native mobile app.
-- The team documentation, CI configuration, contribution rules, and project setup instructions are included in the foundation batch.
-- Backend and frontend source are added in separate commits immediately after the foundation batch.
-- Frontend polish and integration notes follow in separate commits after the source is present.
+- The team documentation, CI configuration, contribution rules, project setup instructions, and Flask backend scaffold are present.
+- The backend routes and services reflect the existing source baseline; endpoint behavior should be checked against the API documentation and by the backend owners.
+- The React/Vite client baseline and UI enhancements are committed in separate batches.
 - Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
 
 ## Run locally
@@ -25,9 +25,10 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | Commit | Date | Scope and handoff |
 |---|---|---|
 | chore: add project standards and docs | 2026-11-01 | Added team docs, CI configuration, contribution rules, scripts, and setup instructions while preserving the repository roster. Backend and frontend source follow in separate commits. |
+| chore: add Flask backend scaffold | 2026-11-01 | Added the existing Flask app, models, routes, migrations, and backend tests. Backend implementation remains with its assigned owners. The client baseline follows next. |
 
 ## Remaining integration work
 
-1. Add the existing backend and frontend source in their own batches.
+1. Add the existing React/Vite client baseline.
 2. Finish the assigned frontend shell, auth UI, task/search/dashboard views, and notifications UI.
-3. Validate those views against the Flask API after the endpoints are available, then check responsive layout, accessibility, and CI before merge.
+3. Validate those views against the Flask API, then check responsive layout, accessibility, and CI before merge.
