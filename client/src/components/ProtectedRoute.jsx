@@ -7,11 +7,6 @@
  * Checks if user is authenticated; redirects to /login if not.
  * Supports role checking (e.g. requiredRole='admin').
  *
- * TODO checklist:
- *   [ ] Integrate with AuthContext
- *   [ ] Render Loading while auth status is unknown
- *   [ ] Redirect to /login with state={{ from: location }}
- *   [ ] Support admin role check redirecting to 403 or home
  */
 
 import React from 'react'

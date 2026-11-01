@@ -8,11 +8,6 @@
  * Handles login, logout, and checking session via /api/auth/me on load.
  * Fetches CSRF token on initialization.
  *
- * TODO checklist (S1-07):
- *   [ ] Call fetchCsrfToken() on mount
- *   [ ] Check current session via authApi.getMe() on mount
- *   [ ] Implement login(email, password)
- *   [ ] Implement logout() and clear local state
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react'

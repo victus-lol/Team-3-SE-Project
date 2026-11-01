@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../services/api.js'
 
 export default function HealthStatus() {
@@ -42,8 +43,7 @@ export default function HealthStatus() {
           <p className="error-message">✗ {error || 'Failed to connect to API.'}</p>
         )}
         <p style={{ marginTop: '1rem', color: '#6b7280', fontSize: '0.875rem' }}>
-          Feature modules are under development. Visit{' '}
-          <a href="/login">Login</a> when authentication is implemented.
+          Sign in to continue to your workspace. <Link to="/login">Open sign in</Link>
         </p>
       </div>
     </div>

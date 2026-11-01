@@ -1,34 +1,25 @@
-/**
- * ConfirmDialog component.
- * Owner: Aaryan Dubey (PES2UG24CS016)
- * Sprint: S1 (S1-08)
- * Requirement IDs: TMA-F-012
- *
- * TODO checklist:
- *   [ ] Implement modal dialog for destructive actions (e.g. task delete)
- *   [ ] Support title, message, confirmText, cancelText, onConfirm, onCancel
- */
+import React, { useState } from 'react'
 
-import React from 'react'
-
-export default function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
+export default function ConfirmDialog({ isOpen, title, message, confirmText = 'Confirm', onConfirm, onCancel }) {
+  const [working, setWorking] = useState(false)
   if (!isOpen) return null
 
+  const confirm = async () => {
+    setWorking(true)
+    try { await onConfirm?.() } finally { setWorking(false) }
+  }
+
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000
-    }}>
-      <div className="card" style={{ maxWidth: '400px', width: '100%', margin: '1rem' }}>
-        <h3 style={{ marginBottom: '0.5rem' }}>{title || 'Confirm Action'}</h3>
-        <p className="text-muted" style={{ marginBottom: '1.5rem' }}>{message || 'Are you sure?'}</p>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-          <button className="btn" onClick={onCancel}>Cancel</button>
-          <button className="btn btn-danger" onClick={onConfirm}>Confirm</button>
+    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !working) onCancel?.() }}>
+      <section className="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message" style={{ maxWidth: 430 }}>
+        <div className="modal-header">
+          <div><p className="eyebrow">Please confirm</p><h2 id="confirm-dialog-title">{title || 'Confirm action'}</h2><p id="confirm-dialog-message">{message || 'Are you sure you want to continue?'}</p></div>
         </div>
-      </div>
+        <div className="modal-actions">
+          <button className="btn btn-quiet" type="button" onClick={onCancel} disabled={working}>Cancel</button>
+          <button className="btn btn-danger" type="button" onClick={confirm} disabled={working}>{working ? 'Working…' : confirmText}</button>
+        </div>
+      </section>
     </div>
   )
 }
-

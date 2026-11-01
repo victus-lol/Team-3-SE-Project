@@ -7,7 +7,8 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - The project is a React/Vite website backed by a Flask API, not a native mobile app.
 - The team documentation, CI configuration, contribution rules, project setup instructions, Flask backend scaffold, and React/Vite client baseline are present.
 - Backend routes and services reflect the existing source baseline; endpoint behavior should be checked against the API documentation and by the backend owners.
-- The UI enhancements are committed in separate frontend-only batches.
+- A responsive application shell, protected routes, and polished login/auth UI are now in place.
+- The UI enhancements are committed in separate frontend-only batches; task/search/dashboard and notifications follow.
 - Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
 
 ## Run locally
@@ -27,8 +28,9 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | chore: add project standards and docs | 2026-11-01 | Added team docs, CI configuration, contribution rules, scripts, and setup instructions while preserving the repository roster. Backend and frontend source follow in separate commits. |
 | chore: add Flask backend scaffold | 2026-11-01 | Added the existing Flask app, models, routes, migrations, and backend tests. Backend implementation remains with its assigned owners. The client baseline follows next. |
 | chore: add React client baseline | 2026-11-01 | Added the existing Vite app, frontend components, package metadata, and UI test setup. The next batches update the assigned frontend views and tests. |
+| feat: polish frontend shell and login flow | 2026-11-01 | Added the responsive app shell, navigation, protected routing, and polished login/auth UI. Auth still requires the backend API routes to be implemented and running. |
 
 ## Remaining integration work
 
-1. Finish the assigned frontend shell, auth UI, task/search/dashboard views, and notifications UI.
-2. Validate those views against the Flask API, then check responsive layout, accessibility, and CI before merge.
+1. Finish the assigned task/search/dashboard views and notifications UI.
+2. Validate all views against the Flask API, then check responsive layout, accessibility, and CI before merge.

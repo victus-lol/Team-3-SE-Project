@@ -1,28 +1,38 @@
-/**
- * Navbar component (skeleton).
- * Owner: Aaryan Dubey (PES2UG24CS016)
- * Sprint: S1 (S1-06)
- *
- * TODO: Implement navigation links and logout button.
- */
-
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../features/auth/AuthContext.jsx'
+import Icon from './Icon.jsx'
 
-export default function Navbar() {
-  return (
-    <nav
-      style={{
-        background: '#1d4ed8',
-        color: '#fff',
-        padding: '0.75rem 1rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-      }}
-    >
-      <span style={{ fontWeight: 700, fontSize: '1.125rem' }}>Task Manager</span>
-      {/* TODO (S1-06 — Aaryan): Add nav links and auth-aware logout */}
-    </nav>
-  )
+function initials(name = 'User') {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 }
 
+export default function Navbar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      navigate('/login', { replace: true })
+    }
+  }
+
+  return (
+    <header className="topbar">
+      <div className="topbar-context">Workspace <span aria-hidden="true">/</span> Personal</div>
+      <div className="topbar-user">
+        <div className="avatar" aria-hidden="true">{initials(user?.name || user?.email)}</div>
+        <div className="user-meta">
+          <strong>{user?.name || user?.email || 'Workspace member'}</strong>
+          <span>{user?.role || 'Member'}</span>
+        </div>
+        <button className="logout-button" type="button" onClick={handleLogout}>
+          <Icon name="logout" size={15} />
+          <span>Sign out</span>
+        </button>
+      </div>
+    </header>
+  )
+}
