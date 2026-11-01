@@ -1,11 +1,19 @@
-import globals from 'globals'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooks from 'eslint-plugin-react-hooks'
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
+import globals from 'globals'
+import eslintReact from '@eslint-react/eslint-plugin'
+import reactHooks from 'eslint-plugin-react-hooks'
+import { defineConfig } from 'eslint/config'
+
+export default defineConfig([
   {
     files: ['src/**/*.{js,jsx}'],
+
+    extends: [
+      eslintReact.configs.recommended,
+      eslintReact.configs['disable-conflict-eslint-plugin-react-hooks'],
+      reactHooks.configs.flat.recommended,
+    ],
+
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -17,24 +25,30 @@ export default [
         ecmaFeatures: { jsx: true },
       },
     },
-    plugins: {
-      react: reactPlugin,
-      'react-hooks': reactHooks,
-    },
+
     settings: {
       react: { version: 'detect' },
     },
+
     rules: {
-      ...reactPlugin.configs.recommended.rules,
-      ...reactHooks.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^React$',
+        },
+      ],
+
       'no-console': 'off',
+
+      '@eslint-react/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
+
   {
     files: ['src/tests/**/*.{js,jsx}'],
+
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -48,5 +62,4 @@ export default [
       },
     },
   },
-]
-
+])
