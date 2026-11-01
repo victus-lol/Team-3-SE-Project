@@ -1,35 +1,24 @@
-/**
- * SearchBar component.
- * Owner: Aaryan Dubey (PES2UG24CS016)
- * Sprint: S2 (S2-03)
- * Requirement IDs: TMA-F-021
- */
-
 import React, { useState } from 'react'
+import Icon from '../../components/Icon.jsx'
 
 export default function SearchBar({ onSearch }) {
   const [query, setQuery] = useState('')
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      onSearch(query)
-    }
+  const submit = (event) => {
+    event.preventDefault()
+    onSearch(query)
   }
 
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+    <form className="search-control" role="search" onSubmit={submit}>
+      <Icon name="search" size={16} />
       <input
         type="search"
-        placeholder="Search tasks by title or description..."
+        aria-label="Search tasks"
+        placeholder="Search tasks by title or description"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleKeyDown}
-        style={{ flex: 1, padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)' }}
+        onChange={(event) => setQuery(event.target.value)}
       />
-      <button className="btn btn-primary" onClick={() => onSearch(query)}>
-        Search
-      </button>
-    </div>
+    </form>
   )
 }
-

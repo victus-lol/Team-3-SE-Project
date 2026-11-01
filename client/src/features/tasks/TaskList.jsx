@@ -1,111 +1,122 @@
-/**
- * TaskList component.
- * Owner: Aaryan Dubey (PES2UG24CS016)
- * Sprint: S1 (S1-08), S2 (S2-03)
- * Requirement IDs: TMA-F-010, TMA-F-021
- *
- * TODO checklist (S1-08):
- *   [ ] Fetch and display list of tasks for authenticated user
- *   [ ] Integrate SearchBar and TaskFilters
- *   [ ] Provide button/trigger to open TaskForm for creation
- *   [ ] Handle delete with ConfirmDialog
- */
-
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import taskApi from './taskApi.js'
 import TaskCard from './TaskCard.jsx'
 import TaskForm from './TaskForm.jsx'
 import Loading from '../../components/Loading.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
+import SearchBar from '../search/SearchBar.jsx'
+import TaskFilters from '../search/TaskFilters.jsx'
+import Icon from '../../components/Icon.jsx'
 
 export default function TaskList() {
-  const [tasks, setTasks] = useState([])
+  const [tasks, setTasks] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [deleteTaskId, setDeleteTaskId] = useState(null)
+  const [activeTask, setActiveTask] = useState(null)
+  const [deleteTask, setDeleteTask] = useState(null)
+  const [deleteError, setDeleteError] = useState('')
+  const [query, setQuery] = useState('')
+  const [filters, setFilters] = useState({ status: '', priority: '', overdue: false })
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
       const res = await taskApi.getTasks()
-      if (res.ok && res.data?.success) {
+      if (res.ok && res.data?.success && Array.isArray(res.data.data)) {
         setTasks(res.data.data)
       } else {
-        setError(res.data?.error?.message || 'Failed to load tasks')
+        setTasks(null)
+        setError(res.data?.error?.message || 'Task service is not available yet.')
       }
     } catch (err) {
-      setError(err.message)
+      setTasks(null)
+      setError(err.message || 'Could not reach the task service.')
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    fetchTasks()
   }, [])
 
+  useEffect(() => { fetchTasks() }, [fetchTasks])
+
+  const visibleTasks = useMemo(() => {
+    if (!tasks) return []
+    const currentDate = new Date()
+    const today = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
+    return tasks.filter((task) => {
+      const normalizedQuery = query.trim().toLowerCase()
+      const matchesQuery = !normalizedQuery || `${task.title || ''} ${task.description || ''}`.toLowerCase().includes(normalizedQuery)
+      const matchesStatus = !filters.status || task.status === filters.status
+      const matchesPriority = !filters.priority || task.priority === filters.priority
+      const overdue = task.due_date && task.due_date < today && task.status !== 'completed'
+      return matchesQuery && matchesStatus && matchesPriority && (!filters.overdue || overdue)
+    })
+  }, [tasks, query, filters])
+
   const handleDelete = async () => {
-    if (!deleteTaskId) return
+    if (!deleteTask) return
+    setDeleteError('')
     try {
-      const res = await taskApi.deleteTask(deleteTaskId)
+      const res = await taskApi.deleteTask(deleteTask.id)
       if (res.ok) {
-        setTasks((prev) => prev.filter((t) => t.id !== deleteTaskId))
+        setTasks((current) => current?.filter((task) => task.id !== deleteTask.id) ?? null)
+        setDeleteTask(null)
+      } else {
+        setDeleteError(res.data?.error?.message || 'The task could not be deleted.')
       }
-    } finally {
-      setDeleteTaskId(null)
+    } catch (err) {
+      setDeleteError(err.message || 'Could not reach the task service.')
     }
   }
 
+  const openCreate = () => { setActiveTask(null); setIsFormOpen(true) }
+  const openEdit = (task) => { setActiveTask(task); setIsFormOpen(true) }
+  const closeForm = () => { setIsFormOpen(false); setActiveTask(null) }
+
   return (
-    <div className="container" style={{ padding: '2rem 1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>My Tasks</h2>
-        <button className="btn btn-primary" onClick={() => setIsFormOpen(true)}>
-          + New Task
-        </button>
+    <>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Workspace / Tasks</p>
+          <h1 className="page-title">My tasks</h1>
+          <p className="page-subtitle">Keep the next step clear and the important work moving.</p>
+        </div>
+        <button className="btn btn-primary" type="button" onClick={openCreate}><Icon name="plus" size={16} /> Create task</button>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      <div className="task-toolbar">
+        <SearchBar onSearch={setQuery} />
+        <TaskFilters filters={filters} onChange={setFilters} />
+      </div>
 
-      {loading ? (
-        <Loading message="Loading tasks..." />
-      ) : tasks.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <p className="text-muted">No tasks found. Create your first task to get started!</p>
+      <div className="section-heading" style={{ marginTop: 18 }}>
+        <div><h2>{loading ? 'Loading tasks' : tasks ? `${visibleTasks.length} ${visibleTasks.length === 1 ? 'task' : 'tasks'}` : 'Task list'}</h2><p>Sorted by your current filters</p></div>
+        {tasks && <span className="eyebrow" style={{ margin: 0 }}>{tasks.filter((task) => task.status !== 'completed').length} open</span>}
+      </div>
+
+      {error && <div className="notice" role="status">{error} The task API in this local project is still awaiting implementation.</div>}
+      {deleteError && <div className="error-message" role="alert">{deleteError}</div>}
+      {loading ? <Loading message="Loading your tasks..." /> : tasks === null ? (
+        <div className="card empty-state"><Icon name="list" size={23} /><strong>Your task list will appear here</strong><p>Once the task service is connected, you can create and manage work from this page.</p></div>
+      ) : visibleTasks.length ? (
+        <div className="task-list">
+          {visibleTasks.map((task) => <TaskCard key={task.id} task={task} onEdit={openEdit} onDelete={() => setDeleteTask(task)} />)}
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '1rem' }}>
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onDelete={(id) => setDeleteTaskId(id)}
-              onUpdate={fetchTasks}
-            />
-          ))}
-        </div>
+        <div className="card empty-state"><Icon name="search" size={22} /><strong>{tasks.length ? 'No tasks match those filters' : 'A clear slate'}</strong><p>{tasks.length ? 'Try a different search or reset one of the filters.' : 'Create your first task when you’re ready to get started.'}</p>{!tasks.length && <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={openCreate}><Icon name="plus" size={15} /> Create task</button>}</div>
       )}
 
-      {isFormOpen && (
-        <TaskForm
-          isOpen={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          onSuccess={() => {
-            setIsFormOpen(false)
-            fetchTasks()
-          }}
-        />
-      )}
+      {isFormOpen && <TaskForm key={activeTask?.id || 'new'} isOpen={isFormOpen} initialData={activeTask} onClose={closeForm} onSuccess={() => { closeForm(); fetchTasks() }} />}
 
       <ConfirmDialog
-        isOpen={Boolean(deleteTaskId)}
-        title="Delete Task"
-        message="Are you sure you want to delete this task? This action cannot be undone."
+        isOpen={Boolean(deleteTask)}
+        title="Delete this task?"
+        message={deleteError || (deleteTask ? `“${deleteTask.title}” will be permanently removed from your task list.` : '')}
+        confirmText="Delete task"
         onConfirm={handleDelete}
-        onCancel={() => setDeleteTaskId(null)}
+        onCancel={() => { setDeleteTask(null); setDeleteError('') }}
       />
-    </div>
+    </>
   )
 }
-

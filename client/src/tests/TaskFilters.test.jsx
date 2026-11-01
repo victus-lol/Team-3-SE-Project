@@ -1,15 +1,31 @@
-/**
- * TaskFilters tests.
- * Owner: Aaryan Dubey (PES2UG24CS016)
- * Sprint: S2 (S2-03)
- * Requirement IDs: TMA-F-021
- */
+import React, { useState } from 'react'
+import { describe, expect, it } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import TaskFilters from '../features/search/TaskFilters.jsx'
 
-import { describe, it } from 'vitest'
+function FilterHarness() {
+  const [filters, setFilters] = useState({ status: '', priority: '', overdue: false })
+  return <><TaskFilters filters={filters} onChange={setFilters} /><output>{JSON.stringify(filters)}</output></>
+}
 
 describe('TaskFilters', () => {
-  it.skip('triggers filter change on status selection', () => {
-    // TC-Search-02 | Owner: Aaryan | Requirement: TMA-F-021 | Backlog: S2-03
+  it('updates the selected status filter', async () => {
+    const user = userEvent.setup()
+    render(<FilterHarness />)
+
+    await user.selectOptions(screen.getByLabelText(/filter by status/i), 'in_progress')
+
+    expect(screen.getByText('{"status":"in_progress","priority":"","overdue":false}')).toBeInTheDocument()
+  })
+
+  it('updates priority and overdue filters', async () => {
+    const user = userEvent.setup()
+    render(<FilterHarness />)
+
+    await user.selectOptions(screen.getByLabelText(/filter by priority/i), 'high')
+    await user.click(screen.getByLabelText(/overdue/i))
+
+    expect(screen.getByText('{"status":"","priority":"high","overdue":true}')).toBeInTheDocument()
   })
 })
-

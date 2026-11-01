@@ -1,28 +1,25 @@
-/**
- * SummaryCards component.
- * Owner: Aaryan Dubey (PES2UG24CS016)
- * Sprint: S2 (S2-05)
- * Requirement IDs: TMA-F-033
- */
-
 import React from 'react'
+import Icon from '../../components/Icon.jsx'
+
+const cards = [
+  { key: 'pending', title: 'To do', note: 'Ready when you are', icon: 'clock', className: 'summary-pending' },
+  { key: 'in_progress', title: 'In progress', note: 'Currently underway', icon: 'spark', className: 'summary-active' },
+  { key: 'completed', title: 'Completed', note: 'Finished with care', icon: 'check', className: 'summary-complete' },
+]
 
 export default function SummaryCards({ summary }) {
-  const cards = [
-    { title: 'Pending Tasks', count: summary?.pending ?? 0, color: '#f59e0b' },
-    { title: 'In Progress', count: summary?.in_progress ?? 0, color: '#3b82f6' },
-    { title: 'Completed', count: summary?.completed ?? 0, color: '#10b981' },
-  ]
-
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-      {cards.map((c) => (
-        <div key={c.title} className="card" style={{ borderTop: `4px solid ${c.color}` }}>
-          <h4 className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{c.title}</h4>
-          <span style={{ fontSize: '2rem', fontWeight: 700 }}>{c.count}</span>
-        </div>
+    <div className="summary-grid">
+      {cards.map((card) => (
+        <article className={`card summary-card ${card.className}`} key={card.key}>
+          <div className="summary-card-top">
+            <span className="summary-label">{card.title}</span>
+            <span className="summary-icon"><Icon name={card.icon} size={16} /></span>
+          </div>
+          <strong className="summary-value">{summary ? (summary[card.key] ?? 0) : '—'}</strong>
+          <p className="summary-note">{summary ? card.note : 'Awaiting task data'}</p>
+        </article>
       ))}
     </div>
   )
 }
-

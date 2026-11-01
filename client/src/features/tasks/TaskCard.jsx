@@ -1,56 +1,33 @@
-/**
- * TaskCard component.
- * Owner: Aaryan Dubey (PES2UG24CS016)
- * Sprint: S1 (S1-08)
- * Requirement IDs: TMA-F-010, TMA-F-011, TMA-F-020
- */
-
 import React from 'react'
+import { Link } from 'react-router-dom'
+import Icon from '../../components/Icon.jsx'
 
-export default function TaskCard({ task, onDelete, onUpdate }) {
-  const priorityColors = {
-    low: '#10b981',
-    medium: '#f59e0b',
-    high: '#ef4444',
-  }
-
-  return (
-    <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-          <h3 style={{ fontSize: '1.125rem' }}>{task.title}</h3>
-          <span style={{
-            fontSize: '0.75rem',
-            padding: '0.15rem 0.5rem',
-            borderRadius: '1rem',
-            color: '#fff',
-            backgroundColor: priorityColors[task.priority] || '#6b7280'
-          }}>
-            {task.priority}
-          </span>
-          <span style={{
-            fontSize: '0.75rem',
-            padding: '0.15rem 0.5rem',
-            borderRadius: '1rem',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-muted)'
-          }}>
-            {task.status}
-          </span>
-        </div>
-        {task.description && <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{task.description}</p>}
-        {task.due_date && <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>Due: {task.due_date}</p>}
-      </div>
-
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <button className="btn" style={{ fontSize: '0.75rem' }} onClick={() => onUpdate && onUpdate(task)}>
-          Edit
-        </button>
-        <button className="btn btn-danger" style={{ fontSize: '0.75rem' }} onClick={() => onDelete && onDelete(task.id)}>
-          Delete
-        </button>
-      </div>
-    </div>
-  )
+function formatDate(value) {
+  if (!value) return 'No due date'
+  const date = new Date(`${value}T00:00:00`)
+  return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
+export default function TaskCard({ task, onDelete, onEdit }) {
+  const dueDate = task.due_date ? new Date(`${task.due_date}T00:00:00`) : null
+  const isOverdue = dueDate && dueDate < new Date(new Date().setHours(0, 0, 0, 0)) && task.status !== 'completed'
+
+  return (
+    <article className="card task-card">
+      <span className={`task-status-mark ${task.status || 'pending'}`} aria-hidden="true" />
+      <div className="task-card-main">
+        <Link to={`/tasks/${task.id}`} className="task-card-title">{task.title}</Link>
+        {task.description && <p className="task-card-description">{task.description}</p>}
+        <div className="task-card-meta">
+          <span className={`pill priority-${task.priority || 'medium'}`}>{task.priority || 'medium'} priority</span>
+          <span className={`pill status-${task.status || 'pending'}`}>{(task.status || 'pending').replace('_', ' ')}</span>
+          <span className={`pill${isOverdue ? ' priority-high' : ''}`}><Icon name="calendar" size={12} /> {isOverdue ? 'Overdue' : formatDate(task.due_date)}</span>
+        </div>
+      </div>
+      <div className="task-card-actions">
+        <button className="icon-button" type="button" aria-label={`Edit ${task.title}`} title="Edit task" onClick={() => onEdit?.(task)}><Icon name="edit" size={15} /></button>
+        <button className="icon-button danger" type="button" aria-label={`Delete ${task.title}`} title="Delete task" onClick={() => onDelete?.(task.id)}><Icon name="trash" size={15} /></button>
+      </div>
+    </article>
+  )
+}
