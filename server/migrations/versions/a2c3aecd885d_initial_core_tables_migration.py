@@ -1,7 +1,7 @@
 """Initial core tables migration
 
 Revision ID: a2c3aecd885d
-Revises: 
+Revises:
 Create Date: 2026-10-30 11:44:53.225111
 
 """
