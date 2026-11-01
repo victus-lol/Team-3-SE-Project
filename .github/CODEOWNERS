@@ -1,0 +1,49 @@
+# CODEOWNERS Template
+#
+# NOTE: Do NOT invent GitHub usernames.
+# Replace the placeholders below with the real confirmed GitHub usernames of team members:
+#   @github-username-for-akash   -> Akash Pawar (PES2UG24CS041) - Repo owner, CI/CD, Infrastructure
+#   @github-username-for-balaji  -> Balaji Gowda S R (PES2UG25CS804) - Auth, DB, Admin
+#   @github-username-for-aadi    -> Aadi Kore (PES2UG24CS006) - Task business logic, QA Lead
+#   @github-username-for-aaryan  -> Aaryan Dubey (PES2UG24CS016) - Frontend React, UI
+#
+# IMPORTANT: CODEOWNERS only takes effect once configured in GitHub repository settings under
+# Branch Protection rules. Repository files alone cannot enforce branch protection.
+
+# Default repo owner & coordination
+*                                           # @github-username-for-akash
+
+# CI/CD and workflows
+/.github/workflows/                         # @github-username-for-akash
+/.github/                                   # @github-username-for-akash
+
+# Frontend (Aaryan)
+/client/                                    # @github-username-for-aaryan
+
+# Backend Auth, Config, Admin, Dashboard (Balaji)
+/server/app/auth/                           # @github-username-for-balaji
+/server/app/admin/                          # @github-username-for-balaji
+/server/app/dashboard/                      # @github-username-for-balaji
+/server/app/config.py                       # @github-username-for-balaji
+/server/app/models/user.py                  # @github-username-for-balaji
+
+# Backend Tasks, Categories, Search, Models (Aadi)
+/server/app/tasks/                          # @github-username-for-aadi
+/server/app/categories/                     # @github-username-for-aadi
+/server/app/search/                         # @github-username-for-aadi
+/server/app/models/task.py                  # @github-username-for-aadi
+/server/app/models/category.py              # @github-username-for-aadi
+
+# Backend Notifications, Infra, Factory (Akash)
+/server/app/notifications/                  # @github-username-for-akash
+/server/app/models/notification.py          # @github-username-for-akash
+/server/app/__init__.py                     # @github-username-for-akash
+/server/app/extensions.py                   # @github-username-for-akash # Coordinated with Balaji
+
+# Shared Middleware
+/server/app/middleware/                     # @github-username-for-balaji # Coordinated with Aadi
+
+# Tests
+/tests/e2e/                                 # @github-username-for-akash
+/server/tests/conftest.py                   # @github-username-for-akash
+

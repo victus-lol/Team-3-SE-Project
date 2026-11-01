@@ -1,0 +1,44 @@
+# Python / virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+junit.xml
+
+# Node / Frontend
+node_modules/
+client/dist/
+.eslintcache
+
+# SQLite Databases & Local Instance
+instance/*.sqlite
+instance/*.sqlite-journal
+instance/*.sqlite-wal
+instance/*.sqlite-shm
+*.db
+*.sqlite3
+
+# Environment & Local Secrets
+.env
+.env.local
+.env.*.local
+
+# Playwright & Testing Reports
+playwright-report/
+test-results/
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+client/.vite/
