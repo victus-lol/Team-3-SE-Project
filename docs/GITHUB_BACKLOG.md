@@ -1,7 +1,8 @@
 # GitHub Backlog (Local Issue Definitions)
 
-> **Notice:** These are local issue definitions and requirements. No remote GitHub issues or projects have been created.
+> This file is the local definition of backlog items and their requirements. Remote GitHub issues have been created for the Sprint 1, Sprint 2 and Sprint 3 work items; their live state, assignees, labels and discussion are maintained in the repository's GitHub Issues. Use GitHub as the source of truth for whether an item is open or closed.
 
+## Sprint 1 Issues
 ## Sprint 1 Issues
 
 ### S1-01: Repository Setup, Structure, and Development Standards
