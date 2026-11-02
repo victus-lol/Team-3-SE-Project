@@ -66,7 +66,7 @@ These are known implementation gaps, not failed CI tests. Anonymous requests may
 
 ## 5. Persistence regression
 
-<badge color="warning">Not yet verified</badge>
+**Not yet verified**
 
 - [ ] Use a file-backed temporary SQLite database for this test; do not use the transient Playwright database.
 - [ ] Create a record through the supported application/data layer and commit it.
@@ -82,7 +82,7 @@ These are known implementation gaps, not failed CI tests. Anonymous requests may
 
 ## 6. Performance regression
 
-<badge color="warning">Not measured</badge>
+**Not measured**
 
 The project test plan specifies 20 concurrent users over a 30-second window and p90 response time no greater than 3 seconds.
 
