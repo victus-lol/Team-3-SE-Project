@@ -1,54 +1,41 @@
-"""
-Auth service unit tests.
-Owner: Balaji Gowda S R (PES2UG25CS804)
-Sprint: S1 (S1-03)
-Requirement IDs: TMA-F-001, TMA-F-002, TMA-SR-001
-"""
 
 import pytest
 
+from app.auth.service import authenticate, create_admin_user
+from app.common.exceptions import AuthenticationError, ConflictError
+
 
 class TestAuthService:
-    """Unit tests for server/app/auth/service.py"""
 
-    @pytest.mark.skip(reason="Pending implementation: S1-03")
     def test_authenticate_valid_credentials(self, db, test_user):
-        """
-        TC-Auth-01 | Owner: Balaji | Requirement: TMA-F-001 | Backlog: S1-03
-        authenticate(email, password) returns User on valid credentials.
-        """
-        pass
+        user = authenticate("testuser@example.com", "password123")
 
-    @pytest.mark.skip(reason="Pending implementation: S1-03")
+        assert user.id == test_user.id
+        assert user.email == "testuser@example.com"
+
     def test_authenticate_invalid_password(self, db, test_user):
-        """
-        TC-Auth-02 | Owner: Balaji | Requirement: TMA-F-001 | Backlog: S1-03
-        authenticate() raises AuthenticationError on wrong password.
-        """
-        pass
+        with pytest.raises(AuthenticationError):
+            authenticate("testuser@example.com", "wrongpassword")
 
-    @pytest.mark.skip(reason="Pending implementation: S1-03")
     def test_authenticate_unknown_email(self, db):
-        """
-        TC-Auth-02 | Owner: Balaji | Requirement: TMA-F-001 | Backlog: S1-03
-        authenticate() raises AuthenticationError on unknown email.
-        Error message must not reveal which field is wrong.
-        """
-        pass
+        with pytest.raises(AuthenticationError):
+            authenticate("unknown@example.com", "password123")
 
-    @pytest.mark.skip(reason="Pending implementation: S1-03")
     def test_create_admin_user(self, db):
-        """
-        Owner: Balaji | Requirement: TMA-SR-001 | Backlog: S1-03
-        create_admin_user() creates a user with role='admin'.
-        """
-        pass
+        admin = create_admin_user(
+            name="Test Admin",
+            email="newadmin@example.com",
+            password="adminpass123",
+        )
 
-    @pytest.mark.skip(reason="Pending implementation: S1-03")
+        assert admin.role == "admin"
+        assert admin.email == "newadmin@example.com"
+        assert admin.check_password("adminpass123")
+
     def test_create_admin_duplicate_email_rejected(self, db, test_admin):
-        """
-        Owner: Balaji | Requirement: TMA-SR-001 | Backlog: S1-03
-        create_admin_user() raises ConflictError on duplicate email.
-        """
-        pass
-
+        with pytest.raises(ConflictError):
+            create_admin_user(
+                name="Another Admin",
+                email=test_admin.email,
+                password="anotherpass123",
+            )

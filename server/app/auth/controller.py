@@ -1,28 +1,51 @@
+
 """
-Authentication controller — request/response parsing layer.
+Authentication controller — request/response handling.
 Owner: Balaji Gowda S R (PES2UG25CS804)
 Sprint: S1 (S1-03)
-
-TODO checklist:
-  [ ] Parse and validate login request body
-  [ ] Delegate to auth_service.authenticate()
-  [ ] Build JSON response from User.to_dict()
-  [ ] Handle AuthenticationError → 401
-  [ ] Handle ValidationError → 400
 """
+
+from flask_login import login_user, logout_user
+
+from ..common.exceptions import (
+    AuthenticationError,
+    ValidationError,
+)
+from .service import authenticate
 
 
 def handle_login(request_data: dict) -> dict:
     """
-    TODO (S1-03 — Balaji): Parse login payload and call auth_service.
-    Returns a dict to be serialized by the route.
+    Validate login data, authenticate the user,
+    and create a Flask-Login session.
     """
-    raise NotImplementedError("handle_login not yet implemented (S1-03)")
+
+    if not isinstance(request_data, dict):
+        raise ValidationError("A valid JSON request body is required.")
+
+    email = request_data.get("email")
+    password = request_data.get("password")
+
+    if (
+        not isinstance(email, str)
+        or not email.strip()
+        or not isinstance(password, str)
+        or not password
+    ):
+        raise ValidationError("Email and password are required.")
+
+    user = authenticate(email, password)
+
+    if not login_user(user):
+        raise AuthenticationError("Invalid email or password.")
+
+    # User.to_dict() excludes password_hash.
+    return user.to_dict()
 
 
 def handle_logout() -> dict:
     """
-    TODO (S1-03 — Balaji): Clear Flask-Login session.
+    Terminate the current Flask-Login session.
     """
-    raise NotImplementedError("handle_logout not yet implemented (S1-03)")
-
+    logout_user()
+    return {"logged_out": True}

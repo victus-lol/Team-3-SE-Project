@@ -75,8 +75,15 @@ def db(app):
     return _db
 
 
+@pytest.fixture
+def app_context(app):
+    """Provide an application context for database operations."""
+    with app.app_context():
+        yield
+
+
 @pytest.fixture(autouse=True)
-def clean_db(db):
+def clean_db(db, app_context):
     """
     Reset database state between tests by rolling back and clearing tables.
     This ensures test isolation without recreating the schema each time.
