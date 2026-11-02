@@ -118,9 +118,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-          cache-dependency-path: |
-            client/package-lock.json
-            tests/package.json
+          cache-dependency-path: client/package-lock.json
 
       - name: Install frontend dependencies for the E2E web server
         working-directory: client
