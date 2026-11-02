@@ -199,14 +199,40 @@ paths:
 
   /api/notifications:
     get:
-      summary: List notifications
+      summary: List notifications for the authenticated user
+      description: Returns only notifications owned by the current session user, newest first. Uses the standard success response envelope.
       responses:
         '200':
-          description: Notifications list
+          description: Notifications retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data, message]
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: Notifications retrieved }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, user_id, message, status]
+                      properties:
+                        id: { type: integer }
+                        user_id: { type: integer }
+                        task_id: { type: integer, nullable: true }
+                        message: { type: string, maxLength: 512 }
+                        scheduled_at: { type: string, format: date-time, nullable: true }
+                        delivered_at: { type: string, format: date-time, nullable: true }
+                        status: { type: string, enum: [pending, delivered, read, failed] }
+                        created_at: { type: string, format: date-time, nullable: true }
+        '401':
+          description: Unauthenticated
 
   /api/notifications/{notificationId}/read:
     patch:
-      summary: Mark notification as read
+      summary: Mark an owned notification as read
+      description: Changes the authenticated user's notification status to read. Notifications belonging to other users return 404.
       parameters:
         - name: notificationId
           in: path
@@ -214,7 +240,11 @@ paths:
           schema: { type: integer }
       responses:
         '200':
-          description: Marked as read
+          description: Notification marked as read
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Notification not found or not owned by the current user
 
   /api/admin/users:
     get:
@@ -224,4 +254,3 @@ paths:
           description: List of users
         '403':
           description: Forbidden - admin required
-
