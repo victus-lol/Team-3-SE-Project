@@ -1,37 +1,79 @@
 """
-Notification scheduler skeleton.
+Deterministic notification scheduler.
 Owner: Akash Pawar (PES2UG24CS041)
 Sprint: S2 (S2-07)
 
-OPEN DECISION: The reminder schedule and delivery mechanism are not yet decided.
-See DECISIONS_AND_OPEN_QUESTIONS.md item (3).
-No timing is invented here. No external service or account is required.
-
-TODO checklist:
-  [ ] Define scheduler interface (start, stop, schedule_reminder)
-  [ ] Implement polling or event-based reminder dispatch using the provider
-  [ ] Ensure scheduler uses fake provider in test environment
+The project has not selected a production scheduler or default reminder time.
+This component therefore exposes an explicit queue and run_pending() method.
+The application/host decides when to call run_pending(); no thread or timer is
+started implicitly. Tests can drive it with FakeNotificationProvider.
 """
+
+from ..common.exceptions import NotFoundError, ValidationError
+from .provider import FakeNotificationProvider
+from .service import dispatch_notification
 
 
 class NotificationScheduler:
-    """
-    TODO (S2-07 — Akash): Scheduler for queued/pending notification delivery.
-    Interface is defined here; implementation deferred to S2.
-    """
+    """Small manually-driven scheduler suitable for deterministic tests."""
 
     def __init__(self, provider=None):
-        self.provider = provider
+        self.provider = provider or FakeNotificationProvider()
+        self._running = False
+        self._queue: list[int] = []
+
+    @property
+    def is_running(self) -> bool:
+        return self._running
+
+    @property
+    def pending_ids(self) -> tuple[int, ...]:
+        """Read-only snapshot of queued notification IDs."""
+        return tuple(self._queue)
 
     def start(self):
-        """TODO: Start the scheduling loop."""
-        raise NotImplementedError("Scheduler not implemented (S2-07)")
+        """Enable explicit run_pending() dispatch calls."""
+        self._running = True
+        return self
 
     def stop(self):
-        """TODO: Stop the scheduling loop."""
-        raise NotImplementedError("Scheduler not implemented (S2-07)")
+        """Disable dispatch without discarding queued reminders."""
+        self._running = False
 
     def schedule_reminder(self, notification_id: int):
-        """TODO: Enqueue a notification for delivery."""
-        raise NotImplementedError("Scheduler not implemented (S2-07)")
+        """Queue a persisted notification once; its scheduled_at controls due time."""
+        if isinstance(notification_id, bool) or not isinstance(notification_id, int) or notification_id <= 0:
+            raise ValidationError("notification_id must be a positive integer.")
+        if notification_id not in self._queue:
+            self._queue.append(notification_id)
+        return notification_id
 
+    def run_pending(self, *, now=None) -> list:
+        """
+        Dispatch queued reminders that are due.
+
+        This method is deliberately explicit rather than starting a background
+        thread. Future reminders stay queued for the next host poll.
+        """
+        if not self._running:
+            return []
+
+        results = []
+        remaining = []
+        for notification_id in self._queue:
+            try:
+                notification = dispatch_notification(
+                    notification_id,
+                    self.provider,
+                    now=now,
+                )
+            except NotFoundError:
+                # A deleted notification should not poison the remaining queue.
+                continue
+
+            results.append(notification)
+            if notification.status == "pending":
+                remaining.append(notification_id)
+
+        self._queue = remaining
+        return results
