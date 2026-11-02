@@ -11,14 +11,14 @@
 - **Impact:** Seed data provides initial categories for development.
 
 ## 3. Reminder Schedule and Delivery Mechanism
-- **Status:** Open
-- **Assumption:** No external notification infrastructure (e.g. Twilio, SendGrid) is assumed. In-app notifications are persisted to the database. Scheduled background dispatch uses a test provider (`FakeNotificationProvider`) with zero third-party dependencies.
-- **Impact:** Tests verify notification record creation and delivery state transitions without external network calls.
+- **Status:** Open — production decision pending
+- **Assumption:** No external notification infrastructure (e.g. Twilio, SendGrid) or default reminder interval is assumed. In-app notifications are persisted to the database. The S2-07 implementation provides an explicit, manually driven scheduler queue and provider interface; it does not start a background thread or timer automatically. Tests inject `FakeNotificationProvider` and call the scheduler explicitly.
+- **Impact:** Tests verify notification record creation, ownership, read state, due-time handling and provider delivery state transitions without external network calls. A production polling/worker mechanism and reminder policy require a separate team decision.
 
 ## 4. Date/Time and Timezone Policy
 - **Status:** Decided (Provisional)
 - **Assumption:** All database timestamps (`created_at`, `updated_at`, `scheduled_at`, `delivered_at`) are stored in UTC. Task deadlines use SQL `DATE` (`YYYY-MM-DD`). Overdue calculations evaluate deadlines against current date in `APP_TIMEZONE` (fallback to UTC).
-- **Impact:** Eliminates timezone ambiguity across client and server.
+- **Impact:** Eliminates timezone ambiguity across server and database operations.
 
 ## 5. Admin Operations and Visibility
 - **Status:** Decided
@@ -39,4 +39,3 @@
 - **Status:** Decided
 - **Assumption:** Reverse proxy terminates TLS; Flask enforces secure cookies (`SESSION_COOKIE_SECURE = True`) in production mode.
 - **Impact:** `SECRET_KEY` must be explicitly configured in production; missing key fails fast on startup.
-
