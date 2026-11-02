@@ -1,8 +1,8 @@
 # End-to-end tests
 
-The Playwright suite lives in this directory and starts the Flask API and Vite
-frontend automatically. It uses the Flask `testing` configuration, which keeps
-the E2E database isolated from the developer database.
+The Playwright suite starts an isolated Flask API and the Vite frontend.
+The E2E server creates a temporary SQLite database per run and seeds dedicated
+test-only user accounts. It does not use the developer's normal database.
 
 ## Local setup (Windows PowerShell)
 
@@ -28,16 +28,30 @@ npm run report
 ```
 
 Stop any manually started app servers before running the suite. Playwright
-starts the API on port 5000 and the client on port 5173.
+starts its own API server on port 5000 and Vite client on port 5173. The E2E
+API server removes its temporary database when it exits.
+
+## Seeded E2E accounts
+
+These credentials exist only in the isolated E2E database:
+
+| Role | Email | Password |
+|---|---|---|
+| Standard user | `e2e.user@example.com` | `password123` |
+| Admin | `e2e.admin@example.com` | `adminpassword123` |
+
+Do not reuse these credentials outside automated tests.
 
 ## Current coverage boundary
 
-The active smoke tests verify API health/readiness, the public sign-in screen,
-logged-out redirects, and anonymous access controls for task, notification,
-and admin endpoints.
+Active browser tests cover:
+- API health and database readiness.
+- Public sign-in form rendering.
+- Valid login and logout.
+- Invalid login rejection.
+- Redirects from protected routes when logged out.
+- Anonymous API access controls for task, notification, and admin endpoints.
 
-The authentication, task CRUD, search/filter, admin-user listing, and
-notification read/write user journeys remain skipped placeholders while their
-dependent feature APIs/UI are unfinished. A skipped test is not a passing
-feature test. Add executable scenarios when the owning feature is implemented
-and available for integration testing.
+Task CRUD, search/filter, admin-user listing, and notification interaction journeys
+remain skipped placeholders until the dependent features are ready for full
+integration testing. A skipped test is not counted as passing feature coverage.
