@@ -1,28 +1,22 @@
 # System Validation Report
 
 **Project:** Task Manager Application  
-**Sprint:** Sprint 2 — current validation snapshot  
+**Sprint:** Sprint 2 — testing snapshot  
 **Execution date:** 2 November 2026  
-**Environment:** Windows, Python 3.11.9, Flask test client, pytest 8.3.4  
-**Branch:** `feature/s2-07-notifications`  
-**Status:** Preliminary / partial validation — not final system sign-off.
+**Local environment:** Windows, Python 3.11.9, Flask test client, pytest 8.3.4, Playwright  
+**Branch:** `feature/s2-09-e2e-workflow`  
+**Status:** Updated partial validation report — not final system sign-off.
 
 ## 1. Objective
 
-Record the backend API/integration validation executed against the current Sprint 2 feature branch and identify scenarios that remain pending before final system acceptance.
+Record the backend unit/integration and browser-based E2E validation executed for the current Sprint 2 implementation. Identify scenarios that remain skipped or blocked by incomplete feature APIs.
 
-## 2. Execution
+## 2. Backend execution
 
 Command:
 
 ```powershell
-python -m pytest --cov=app --cov-branch --cov-report=term-missing
-```
-
-Focused notification API execution:
-
-```powershell
-python -m pytest -v tests/unit/test_notification_service.py tests/integration/test_notifications_api.py
+python -m pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=json:coverage.json --junitxml=junit.xml
 ```
 
 ## 3. Backend integration test results
@@ -30,51 +24,67 @@ python -m pytest -v tests/unit/test_notification_service.py tests/integration/te
 | Integration test file | Passed | Skipped | Validation area |
 |---|---:|---:|---|
 | `test_admin_api.py` | 2 | 2 | Admin access |
-| `test_auth_api.py` | 0 | 8 | Login/session |
+| `test_auth_api.py` | 8 | 0 | Login/session |
 | `test_categories_api.py` | 1 | 2 | Category API |
 | `test_health_api.py` | 11 | 0 | Health, readiness and database checks |
 | `test_notifications_api.py` | 4 | 0 | Notification API and ownership |
 | `test_persistence.py` | 0 | 1 | Persistence |
 | `test_search_api.py` | 0 | 4 | Search and sorting |
-| `test_security_api.py` | 2 | 3 | Authentication/access and error response checks |
+| `test_security_api.py` | 2 | 3 | Authentication/access and error responses |
 | `test_summary_api.py` | 1 | 2 | Dashboard summary |
 | `test_tasks_api.py` | 3 | 5 | Task API |
-| **Total** | **24** | **27** | |
+| **Total** | **32** | **19** | |
 
-## 4. S2-07 notification validation
+## 4. Backend unit and integration totals
 
-| Scenario | Expected result | Observed result |
-|---|---|---|
-| GET notifications without login | 401 | Passed |
-| GET notifications with login | 200 and standard response envelope | Passed |
-| User has own and foreign notifications | Only own records returned | Passed |
-| Mark own notification as read | Status becomes `read` | Passed |
-| Mark another user's notification as read | 404 without exposing foreign record | Passed |
+| Test group | Passed | Skipped | Total |
+|---|---:|---:|---:|
+| Unit tests | 49 | 25 | 74 |
+| Integration/API tests | 32 | 19 | 51 |
+| **Backend total** | **81** | **44** | **125** |
 
-The related unit-level service and scheduler tests also passed (15/15).
+**Failed:** 0
 
-## 5. Overall backend test status
+The authentication service unit tests (5) and authentication API tests (8) are now active and passing. The notification service unit tests (15) and notification integration tests (4) also pass.
 
-| Result | Count |
+## 5. Playwright E2E validation
+
+The Playwright suite was run locally from the `tests` directory and passed in GitHub Actions.
+
+| Browser test area | Passed | Skipped |
+|---|---:|---:|
+| Valid user login and logout | 1 | 0 |
+| Invalid credentials rejection | 1 | 0 |
+| Logged-out protected-route redirect | 1 | 0 |
+| Platform smoke and anonymous-access checks | 5 | 0 |
+| Admin user journeys | 0 | 2 |
+| Notification journeys | 0 | 2 |
+| Search/filter/sort journeys | 0 | 3 |
+| Task CRUD journeys | 0 | 3 |
+| **Total** | **8** | **10** |
+
+**E2E failures:** 0
+
+The E2E server uses a disposable SQLite database and seeded test-only accounts. It does not use the developer's normal database.
+
+## 6. Coverage snapshot
+
+| Metric | Result |
 |---|---:|
-| Passed | 68 |
-| Skipped / pending | 57 |
-| Failed | 0 |
-| **Total collected** | **125** |
+| Backend statement coverage | 87.93% (approximately 88%) |
+| Backend branch coverage | 71.74% (66 of 92 paths) |
 
-## 6. Outstanding validation
+The branch measurement is from the local Windows/Python 3.11.9 run. GitHub Actions backend tests also passed on Linux/Python 3.12, with 81 passed, 44 skipped and 88% line coverage. The workflow currently reports line coverage without enabling branch measurement.
 
-This execution does **not** constitute complete end-to-end system validation. The following areas still have skipped/pending tests:
-- Login, logout and session behavior.
-- Task CRUD and task authorization cases.
-- Search, filters and deterministic sorting.
-- Persistence across session/application restart.
-- Some category, dashboard and admin cases.
-- Full browser-based Playwright workflows.
-- Frontend-to-backend integration against a running application.
+## 7. Observations and outstanding validation
 
-The frontend CI checks passed on the pull request, but that does not replace full Playwright E2E or integrated system validation.
+- Authentication endpoints now support login, logout and current-user retrieval; their backend and browser tests pass.
+- Notification API ownership and read-state cases pass.
+- The authenticated browser test logs show `GET /api/dashboard/summary` and `GET /api/tasks` returning HTTP 501. These endpoints remain unfinished, so a successful login does not mean the dashboard/task workflows are complete.
+- Task CRUD, search/filter, persistence and several admin/category/dashboard cases remain skipped or incomplete.
+- The browser tests for notification interactions, search, task CRUD and admin user journeys remain skipped. They must not be described as passing.
+- Nine SQLAlchemy LegacyAPIWarning warnings appeared in the local backend test run. They did not fail the tests.
 
-## 7. Conclusion
+## 8. Conclusion
 
-The current backend snapshot has no failing tests, and the S2-07 notification service/API cases pass. Final system validation remains **in progress** until the pending cases are implemented or formally deferred, E2E workflows are executed, and the complete Test Plan is reviewed. No final acceptance claim is made by this preliminary report.
+The current backend snapshot has **81 passed, 44 skipped and 0 failed**. The E2E suite has **8 passed, 10 skipped and 0 failed**. Authentication, platform smoke/security checks and notification API tests are passing. Full system validation remains **in progress** until incomplete feature endpoints and pending scenarios are implemented, tested and reviewed. No final acceptance claim is made by this preliminary report.
