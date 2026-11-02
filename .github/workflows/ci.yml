@@ -31,7 +31,7 @@ jobs:
       - name: Run Pytest
         run: |
           cd server
-          pytest --cov=app --cov-report=term-missing --junitxml=junit.xml
+          python -m pytest --cov=app --cov-report=term-missing --junitxml=junit.xml
 
       - name: Upload Pytest report
         uses: actions/upload-artifact@v4
