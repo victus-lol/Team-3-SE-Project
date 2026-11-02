@@ -10,7 +10,6 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.common.exceptions import NotFoundError, ValidationError
-from app.models.notification import Notification
 from app.notifications.scheduler import NotificationScheduler
 from app.notifications.service import (
     create_notification,
@@ -121,6 +120,15 @@ class TestNotificationService:
 
 
 class TestNotificationScheduler:
+    def test_scheduler_requires_explicit_provider(self):
+        with pytest.raises(ValueError, match="provider"):
+            NotificationScheduler(None)
+
+    def test_scheduler_rejects_invalid_notification_id(self, fake_provider):
+        scheduler = NotificationScheduler(provider=fake_provider)
+        with pytest.raises(ValidationError):
+            scheduler.schedule_reminder(0)
+
     def test_scheduler_requires_start_and_dispatches_queue(self, db, test_user, fake_provider):
         notification = create_notification(test_user.id, "Scheduled delivery")
         scheduler = NotificationScheduler(provider=fake_provider)
