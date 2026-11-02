@@ -34,13 +34,13 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'python server/run.py',
+      command: 'python tests/e2e/start_server.py',
       cwd: '..',
       url: 'http://127.0.0.1:5000/api/ready',
       timeout: 120000,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       env: {
-        FLASK_ENV: 'testing',
+        FLASK_ENV: 'e2e',
         FLASK_HOST: '127.0.0.1',
       },
     },
