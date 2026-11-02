@@ -10,7 +10,6 @@ started implicitly. Tests can drive it with FakeNotificationProvider.
 """
 
 from ..common.exceptions import NotFoundError, ValidationError
-from ..common.responses import success_response
 from .service import dispatch_notification
 
 
