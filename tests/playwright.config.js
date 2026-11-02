@@ -4,20 +4,27 @@ import { defineConfig, devices } from '@playwright/test'
  * Playwright E2E configuration.
  * Owner: Akash Pawar (PES2UG24CS041)
  *
- * Configured with webServer to automatically launch:
- * 1. Flask backend on port 5000 (with temporary test DB)
- * 2. Vite frontend on port 5173
- * No manual orchestration or Docker required!
+ * Run from tests/ with npm test. The working directory for both servers is
+ * explicitly set to the repository root so paths work on Windows and CI.
  */
-
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: './e2e',
   timeout: 30000,
+  expect: {
+    timeout: 10000,
+  },
   fullyParallel: false,
-  reporter: 'html',
+  retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+  ],
+  outputDir: 'test-results',
   use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry',
+    baseURL: 'http://127.0.0.1:5173',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   projects: [
     {
@@ -28,20 +35,21 @@ export default defineConfig({
   webServer: [
     {
       command: 'python server/run.py',
-      port: 5000,
+      cwd: '..',
+      url: 'http://127.0.0.1:5000/api/ready',
       timeout: 120000,
       reuseExistingServer: !process.env.CI,
       env: {
         FLASK_ENV: 'testing',
-        DATABASE_URL: 'sqlite:///instance/e2e_test.sqlite',
+        FLASK_HOST: '127.0.0.1',
       },
     },
     {
-      command: 'npm --prefix client run dev',
-      port: 5173,
+      command: 'npm --prefix client run dev -- --host 127.0.0.1',
+      cwd: '..',
+      url: 'http://127.0.0.1:5173/login',
       timeout: 120000,
       reuseExistingServer: !process.env.CI,
     },
   ],
 })
-
