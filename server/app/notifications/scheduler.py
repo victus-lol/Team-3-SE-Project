@@ -10,15 +10,17 @@ started implicitly. Tests can drive it with FakeNotificationProvider.
 """
 
 from ..common.exceptions import NotFoundError, ValidationError
-from .provider import FakeNotificationProvider
+from ..common.responses import success_response
 from .service import dispatch_notification
 
 
 class NotificationScheduler:
     """Small manually-driven scheduler suitable for deterministic tests."""
 
-    def __init__(self, provider=None):
-        self.provider = provider or FakeNotificationProvider()
+    def __init__(self, provider):
+        if provider is None or not callable(getattr(provider, "send", None)):
+            raise ValueError("A notification provider with a send() method is required.")
+        self.provider = provider
         self._running = False
         self._queue: list[int] = []
 
@@ -42,7 +44,11 @@ class NotificationScheduler:
 
     def schedule_reminder(self, notification_id: int):
         """Queue a persisted notification once; its scheduled_at controls due time."""
-        if isinstance(notification_id, bool) or not isinstance(notification_id, int) or notification_id <= 0:
+        if (
+            isinstance(notification_id, bool)
+            or not isinstance(notification_id, int)
+            or notification_id <= 0
+        ):
             raise ValidationError("notification_id must be a positive integer.")
         if notification_id not in self._queue:
             self._queue.append(notification_id)
