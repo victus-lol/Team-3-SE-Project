@@ -8,15 +8,17 @@ Endpoints:
   GET /api/dashboard/summary → counts of pending/in_progress/completed tasks
 
 TODO checklist:
-  [ ] Implement summary counts over current user's accessible tasks
-  [ ] Return counts in standard success envelope
-  [ ] Write integration tests in tests/integration/test_summary_api.py
+  [x] Implement summary counts over current user's accessible tasks
+  [x] Return counts in standard success envelope
+  [x] Write integration tests in tests/integration/test_summary_api.py
 """
 
 from flask import Blueprint, jsonify
+from flask_login import current_user
 
-from ..common.responses import not_implemented_response
+from ..common.responses import success_response
 from ..middleware.authorization import login_required_json
+from .service import get_summary
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -25,8 +27,9 @@ dashboard_bp = Blueprint("dashboard", __name__)
 @login_required_json
 def summary():
     """
-    TODO (S2-04 — Balaji): Return task counts for the current user's dashboard.
+    Return task counts for the current user's dashboard.
     TC-Summary-01 | Requirement: TMA-F-033 | Backlog: S2-04
     """
-    return jsonify(not_implemented_response("Dashboard summary")), 501
+    counts = get_summary(current_user.id)
+    return jsonify(success_response(counts, "Dashboard summary retrieved successfully.")), 200
 
