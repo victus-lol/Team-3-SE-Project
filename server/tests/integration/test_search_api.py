@@ -1,43 +1,67 @@
 """
 Search API integration tests.
 Owner: Aadi Kore (PES2UG24CS006)
-Sprint: S2 (S2-02)
-Requirement IDs: TMA-F-021, TMA-F-022, TMA-F-023
 """
 
-import pytest
+from datetime import date, timedelta
+
+from app.models.task import Task
 
 
 class TestSearchApi:
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
+
     def test_search_by_keyword(self, auth_client, sample_task):
-        """
-        TC-Search-01 | Owner: Aadi | Requirement: TMA-F-021 | Backlog: S2-02
-        GET /api/tasks?q=keyword returns matching tasks.
-        """
-        pass
+        response = auth_client.get(
+            "/api/tasks?q=Sample"
+        )
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_filter_by_status(self, auth_client):
-        """
-        TC-Search-02 | Owner: Aadi | Requirement: TMA-F-021 | Backlog: S2-02
-        GET /api/tasks?status=pending returns only pending tasks.
-        """
-        pass
+        assert response.status_code == 200
+        data = response.get_json()["data"]
+        assert any(task["id"] == sample_task.id for task in data)
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_sort_by_created_at(self, auth_client):
-        """
-        TC-Search-03 | Owner: Aadi | Requirement: TMA-F-023 | Backlog: S2-02
-        GET /api/tasks?sort_by=created_at returns deterministically sorted tasks.
-        """
-        pass
+    def test_filter_by_status(self, auth_client, db, test_user):
+        db.session.add(Task(
+            owner_id=test_user.id,
+            title="Pending task",
+            status="pending",
+        ))
+        db.session.add(Task(
+            owner_id=test_user.id,
+            title="Completed task",
+            status="completed",
+        ))
+        db.session.commit()
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
+        response = auth_client.get(
+            "/api/tasks?status=pending"
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()["data"]
+        assert all(task["status"] == "pending" for task in data)
+
+    def test_sort_by_created_at(self, auth_client, db, test_user):
+        db.session.add(Task(
+            owner_id=test_user.id,
+            title="First",
+        ))
+        db.session.add(Task(
+            owner_id=test_user.id,
+            title="Second",
+        ))
+        db.session.commit()
+
+        response = auth_client.get(
+            "/api/tasks?sort_by=created_at&order=asc"
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()["data"]
+        assert len(data) == 2
+
     def test_invalid_sort_field_rejected(self, auth_client):
-        """
-        TC-Sec-05 | Owner: Aadi | Requirement: TMA-SR-003 | Backlog: S2-02
-        GET /api/tasks?sort_by=injected_column returns 400 (allowlist enforced).
-        """
-        pass
+        response = auth_client.get(
+            "/api/tasks?sort_by=injected_column"
+        )
 
+        assert response.status_code == 400
