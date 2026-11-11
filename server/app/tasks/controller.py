@@ -1,21 +1,34 @@
 """
-Task controller — request/response parsing.
+Task controller.
 Owner: Aadi Kore (PES2UG24CS006)
-Sprint: S1 (S1-04, S1-05)
-
-TODO checklist:
-  [ ] Parse and validate create/update payloads using schemas.py
-  [ ] Call task_service functions
-  [ ] Map service exceptions to HTTP responses
 """
+
+from ..common.exceptions import ValidationError
+from .schemas import validate_create_task, validate_update_task
+from .service import create_task, update_task
 
 
 def handle_create_task(owner_id: int, data: dict) -> dict:
-    """TODO (S1-04 — Aadi): Parse create payload, call service."""
-    raise NotImplementedError("handle_create_task not implemented (S1-04)")
+    cleaned, errors = validate_create_task(data)
+
+    if errors:
+        raise ValidationError(
+            "Task validation failed.",
+            {"errors": errors},
+        )
+
+    task = create_task(owner_id, cleaned)
+    return task.to_dict()
 
 
 def handle_update_task(task_id: int, owner_id: int, data: dict) -> dict:
-    """TODO (S1-04 — Aadi): Parse update payload, call service."""
-    raise NotImplementedError("handle_update_task not implemented (S1-04)")
+    cleaned, errors = validate_update_task(data)
 
+    if errors:
+        raise ValidationError(
+            "Task validation failed.",
+            {"errors": errors},
+        )
+
+    task = update_task(task_id, owner_id, cleaned)
+    return task.to_dict()
