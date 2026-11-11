@@ -4,8 +4,6 @@ Owner: Aadi Kore (PES2UG24CS006)
 Sprint: S1 (S1-04), S2 (S2-01)
 """
 
-from datetime import datetime
-
 from ..common.exceptions import ValidationError
 from .rules import validate_due_date, validate_priority, validate_status
 

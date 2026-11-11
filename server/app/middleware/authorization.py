@@ -18,6 +18,7 @@ def login_required_json(f):
     Like Flask-Login's @login_required but returns JSON 401 instead of
     redirecting to the login page. Use on all API routes.
     """
+
     @wraps(f)
     def decorated(*args, **kwargs):
         if not current_user.is_authenticated:
@@ -26,6 +27,7 @@ def login_required_json(f):
                 401,
             )
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -35,6 +37,7 @@ def admin_required(f):
     Returns 401 if not logged in, 403 if logged in but not admin.
     Never relies on frontend-only visibility.
     """
+
     @wraps(f)
     def decorated(*args, **kwargs):
         if not current_user.is_authenticated:
@@ -48,6 +51,7 @@ def admin_required(f):
                 403,
             )
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -62,6 +66,7 @@ def owner_required(model_cls, id_param: str = "task_id", user_field: str = "owne
     Design choice: 404 is returned for unauthorized access to another user's
     resource. This is consistent and documented in DECISIONS_AND_OPEN_QUESTIONS.md.
     """
+
     def decorator(f):
         @wraps(f)
         @login_required_json
@@ -76,6 +81,7 @@ def owner_required(model_cls, id_param: str = "task_id", user_field: str = "owne
                 return jsonify(error_response("NOT_FOUND", "Resource not found.")), 404
             kwargs["resource"] = resource
             return f(*args, **kwargs)
-        return decorated
-    return decorator
 
+        return decorated
+
+    return decorator

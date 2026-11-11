@@ -1,5 +1,4 @@
 class TestTasksApiLive:
-
     def test_list_tasks_unauthenticated_returns_401(self, client):
         assert client.get("/api/tasks").status_code == 401
 
@@ -12,7 +11,6 @@ class TestTasksApiLive:
 
 
 class TestTasksCrud:
-
     def test_create_task_authenticated(self, auth_client):
         response = auth_client.post(
             "/api/tasks",
@@ -20,9 +18,7 @@ class TestTasksCrud:
         )
         assert response.status_code == 201
 
-    def test_list_tasks_returns_only_owned(
-        self, auth_client, test_user, test_admin, db
-    ):
+    def test_list_tasks_returns_only_owned(self, auth_client, test_user, test_admin, db):
         from app.models.task import Task
 
         db.session.add(Task(owner_id=test_user.id, title="Mine"))
@@ -42,9 +38,7 @@ class TestTasksCrud:
         )
         assert response.status_code == 200
 
-    def test_update_another_users_task_returns_404(
-        self, auth_client, db, test_admin
-    ):
+    def test_update_another_users_task_returns_404(self, auth_client, db, test_admin):
         from app.models.task import Task
 
         task = Task(owner_id=test_admin.id, title="Private")
@@ -58,7 +52,5 @@ class TestTasksCrud:
         assert response.status_code == 404
 
     def test_delete_own_task(self, auth_client, sample_task):
-        response = auth_client.delete(
-            f"/api/tasks/{sample_task.id}"
-        )
+        response = auth_client.delete(f"/api/tasks/{sample_task.id}")
         assert response.status_code == 200

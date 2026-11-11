@@ -15,9 +15,9 @@ import os
 from pathlib import Path
 
 # Resolve the project root (three levels up from this file: app/ → server/ → task-manager/)
-_HERE = Path(__file__).resolve().parent          # server/app/
-_SERVER_DIR = _HERE.parent                       # server/
-_PROJECT_ROOT = _SERVER_DIR.parent               # task-manager/
+_HERE = Path(__file__).resolve().parent  # server/app/
+_SERVER_DIR = _HERE.parent  # server/
+_PROJECT_ROOT = _SERVER_DIR.parent  # task-manager/
 _INSTANCE_DIR = _PROJECT_ROOT / "instance"
 
 
@@ -121,7 +121,7 @@ class ProductionConfig(BaseConfig):
         if not secret or secret == "dev-secret-change-in-production":
             raise RuntimeError(
                 "SECRET_KEY environment variable must be set to a strong random value "
-                "in production. Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                'in production. Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
             )
         # Ensure instance dir exists
         _INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
@@ -134,4 +134,3 @@ config_map = {
     # Default alias
     "default": DevelopmentConfig,
 }
-

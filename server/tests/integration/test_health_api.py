@@ -66,14 +66,13 @@ class TestDbIsolation:
         uri = app.config["SQLALCHEMY_DATABASE_URI"]
         # Must be a test temp file or in-memory — never the project instance DB
         assert "task_manager.sqlite" not in uri, (
-            "CRITICAL: Test suite is using the developer's database! "
-            f"Current URI: {uri}"
+            "CRITICAL: Test suite is using the developer's database! " f"Current URI: {uri}"
         )
         # Must not point to any persistent project path
         project_instance = os.path.join("instance", "task_manager.sqlite")
-        assert project_instance.replace("\\", "/") not in uri.replace("\\", "/"), (
-            f"Test DB URI points to production database: {uri}"
-        )
+        assert project_instance.replace("\\", "/") not in uri.replace(
+            "\\", "/"
+        ), f"Test DB URI points to production database: {uri}"
 
     def test_test_config_flag(self, app):
         """TESTING flag must be True in test environment."""
@@ -116,4 +115,3 @@ class TestCsrfEndpoint:
         assert data["success"] is True
         assert "csrf_token" in data["data"]
         assert len(data["data"]["csrf_token"]) > 0
-

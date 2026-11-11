@@ -49,9 +49,7 @@ def search_tasks(user_id: int, params: dict | None = None) -> list:
         try:
             category_id = int(category_id)
         except (TypeError, ValueError) as exc:
-            raise ValidationError(
-                "Category ID must be an integer."
-            ) from exc
+            raise ValidationError("Category ID must be an integer.") from exc
 
         if category_id <= 0:
             raise ValidationError("Category ID must be positive.")
@@ -60,23 +58,17 @@ def search_tasks(user_id: int, params: dict | None = None) -> list:
 
     date_from = params.get("due_date_from")
     if date_from:
-        query = query.filter(
-            Task.due_date >= validate_due_date(date_from)
-        )
+        query = query.filter(Task.due_date >= validate_due_date(date_from))
 
     date_to = params.get("due_date_to")
     if date_to:
-        query = query.filter(
-            Task.due_date <= validate_due_date(date_to)
-        )
+        query = query.filter(Task.due_date <= validate_due_date(date_to))
 
     overdue = params.get("overdue")
 
     if overdue not in (None, ""):
         if overdue not in ("true", "false"):
-            raise ValidationError(
-                "Overdue must be true or false."
-            )
+            raise ValidationError("Overdue must be true or false.")
 
         if overdue == "true":
             query = query.filter(

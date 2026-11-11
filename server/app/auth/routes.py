@@ -1,4 +1,3 @@
-
 """
 Authentication routes.
 Owner: Balaji Gowda S R (PES2UG25CS804)
@@ -38,9 +37,7 @@ def login():
     request_data = request.get_json(silent=True)
     user_data = handle_login(request_data)
 
-    return jsonify(
-        success_response(user_data, "Login successful.")
-    ), 200
+    return jsonify(success_response(user_data, "Login successful.")), 200
 
 
 @auth_bp.route("/logout", methods=["POST"])
@@ -48,9 +45,7 @@ def logout():
     """Terminate the current user session."""
     result = handle_logout()
 
-    return jsonify(
-        success_response(result, "Logout successful.")
-    ), 200
+    return jsonify(success_response(result, "Logout successful.")), 200
 
 
 @auth_bp.route("/me", methods=["GET"])
@@ -68,6 +63,4 @@ def me():
 @auth_bp.route("/register", methods=["POST"])
 def register():
     """Registration is outside the currently approved scope."""
-    return jsonify(
-        not_implemented_response("Registration (scope-pending)")
-    ), 501
+    return jsonify(not_implemented_response("Registration (scope-pending)")), 501

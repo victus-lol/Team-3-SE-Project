@@ -1,4 +1,3 @@
-
 """
 Authentication service — business logic layer.
 Owner: Balaji Gowda S R (PES2UG25CS804)
@@ -41,9 +40,7 @@ def create_admin_user(name: str, email: str, password: str) -> User:
     existing = get_user_by_email(normalized_email)
 
     if existing:
-        raise ConflictError(
-            f"A user with email '{normalized_email}' already exists."
-        )
+        raise ConflictError(f"A user with email '{normalized_email}' already exists.")
 
     if len(password) < 8:
         raise ValidationError("Password must be at least 8 characters.")
@@ -64,6 +61,4 @@ def create_admin_user(name: str, email: str, password: str) -> User:
 def get_user_by_email(email: str) -> User | None:
     """Look up a user using a normalized email address."""
 
-    return User.query.filter_by(
-        email=email.strip().lower()
-    ).first()
+    return User.query.filter_by(email=email.strip().lower()).first()

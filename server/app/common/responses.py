@@ -4,7 +4,9 @@ Owner: Akash Pawar (PES2UG24CS041)
 """
 
 
-def success_response(data: dict | list | None = None, message: str = "Operation successful") -> dict:
+def success_response(
+    data: dict | list | None = None, message: str = "Operation successful"
+) -> dict:
     """Build a standard success envelope."""
     return {
         "success": True,
@@ -33,4 +35,3 @@ def not_implemented_response(feature: str = "This feature") -> dict:
         "NOT_IMPLEMENTED",
         f"{feature} has not been implemented yet.",
     )
-

@@ -1,4 +1,3 @@
-
 """
 Authentication controller — request/response handling.
 Owner: Balaji Gowda S R (PES2UG25CS804)

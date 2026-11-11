@@ -25,5 +25,5 @@ def require_json(f):
                 400,
             )
         return f(*args, **kwargs)
-    return decorated
 
+    return decorated

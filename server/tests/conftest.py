@@ -185,4 +185,3 @@ def fake_provider():
     """FakeNotificationProvider — use in notification tests."""
     provider = FakeNotificationProvider()
     return provider
-

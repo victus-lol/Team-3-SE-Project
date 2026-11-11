@@ -30,9 +30,7 @@ def create_app(config_name: str | None = None) -> Flask:
     # ── Configuration ────────────────────────────────────────────────────────
     cfg = config_map.get(config_name)
     if cfg is None:
-        raise ValueError(
-            f"Unknown config '{config_name}'. Choose from: {list(config_map.keys())}"
-        )
+        raise ValueError(f"Unknown config '{config_name}'. Choose from: {list(config_map.keys())}")
     app.config.from_object(cfg)
     cfg.init_app(app)
 
@@ -126,14 +124,13 @@ def _register_blueprints(app: Flask) -> None:
         """Readiness check — verifies DB connectivity."""
         try:
             from sqlalchemy import text as sql_text
+
             db.session.execute(sql_text("SELECT 1"))
             return jsonify(success_response({"db": "ok"}, "Service is ready")), 200
         except Exception:
             # Never expose internal details
             return (
-                jsonify(
-                    error_response("SERVICE_UNAVAILABLE", "Database not available")
-                ),
+                jsonify(error_response("SERVICE_UNAVAILABLE", "Database not available")),
                 503,
             )
 
@@ -141,6 +138,7 @@ def _register_blueprints(app: Flask) -> None:
 def _register_error_handlers(app: Flask) -> None:
     """Central JSON error responses."""
     from .middleware.error_handler import register_error_handlers
+
     register_error_handlers(app)
 
 
@@ -170,4 +168,3 @@ def _register_cli(app: Flask) -> None:
             raise SystemExit(1)
 
     app.cli.add_command(create_admin_cmd)
-

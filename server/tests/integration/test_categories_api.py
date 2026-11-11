@@ -4,32 +4,24 @@ Owner: Aadi Kore (PES2UG24CS006)
 Sprint: S2 (S2-01)
 """
 
-class TestCategoriesApiLive:
 
+class TestCategoriesApiLive:
     def test_list_categories_unauthenticated_returns_401(self, client):
         response = client.get("/api/categories")
         assert response.status_code == 401
 
 
 class TestCategoriesApi:
-
-    def test_list_categories_authenticated(
-        self, auth_client, sample_category
-    ):
+    def test_list_categories_authenticated(self, auth_client, sample_category):
         response = auth_client.get("/api/categories")
 
         assert response.status_code == 200
 
         data = response.get_json()
         assert data["success"] is True
-        assert any(
-            category["id"] == sample_category.id
-            for category in data["data"]
-        )
+        assert any(category["id"] == sample_category.id for category in data["data"])
 
-    def test_category_not_visible_to_other_user(
-        self, auth_client, db, test_admin
-    ):
+    def test_category_not_visible_to_other_user(self, auth_client, db, test_admin):
         from app.models.category import Category
 
         category = Category.create(test_admin.id, "private")
@@ -41,7 +33,4 @@ class TestCategoriesApi:
         assert response.status_code == 200
 
         data = response.get_json()
-        assert all(
-            item["user_id"] != test_admin.id
-            for item in data["data"]
-        )
+        assert all(item["user_id"] != test_admin.id for item in data["data"])

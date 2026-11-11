@@ -19,21 +19,18 @@ categories_bp = Blueprint("categories", __name__)
 def list_categories():
     categories = get_categories(current_user.id)
 
-    return jsonify(
-        success_response([
-            category.to_dict()
-            for category in categories
-        ])
-    ), 200
+    return jsonify(success_response([category.to_dict() for category in categories])), 200
 
 
 @categories_bp.route("", methods=["POST"])
 @login_required_json
 def create_category():
-    return jsonify({
-        "success": False,
-        "error": {
-            "code": "NOT_IMPLEMENTED",
-            "message": "Category creation is pending scope approval.",
-        },
-    }), 501
+    return jsonify(
+        {
+            "success": False,
+            "error": {
+                "code": "NOT_IMPLEMENTED",
+                "message": "Category creation is pending scope approval.",
+            },
+        }
+    ), 501

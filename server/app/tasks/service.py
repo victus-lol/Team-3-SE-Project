@@ -1,50 +1,124 @@
 """
-Task service — business logic for task CRUD.
+Task service: database operations and ownership enforcement.
 Owner: Aadi Kore (PES2UG24CS006)
-Sprint: S1 (S1-04, S1-05), S2 (S2-01, S2-02)
-Requirement IDs: TMA-F-010, TMA-F-011, TMA-F-012
-
-TODO checklist:
-  [ ] Implement get_tasks_for_user(user_id, filters) → list[Task]
-  [ ] Implement create_task(owner_id, data) → Task
-  [ ] Implement get_task(task_id, user_id) → Task (404 if not owned)
-  [ ] Implement update_task(task_id, user_id, data) → Task
-  [ ] Implement delete_task(task_id, user_id) → None
-  [ ] Validate category ownership before assigning (no cross-user categories)
-  [ ] Apply rules from rules.py for priority, status, due_date
-  [ ] Write unit tests in tests/unit/test_task_service.py
 """
 
+from sqlalchemy import asc, desc
+
+from ..categories.service import get_category_or_404
+from ..common.exceptions import NotFoundError, ValidationError
+from ..extensions import db
 from ..models.task import Task
+from .rules import (
+    allowed_status_transitions,
+    validate_due_date,
+    validate_priority,
+    validate_status,
+)
 
 
 def get_task_or_404(task_id: int, user_id: int) -> Task:
-    """
-    TODO (S1-04 — Aadi): Return task if owned by user_id, else raise NotFoundError.
-    Returns 404 (not 403) to prevent enumeration — see DECISIONS_AND_OPEN_QUESTIONS.md.
-    """
-    raise NotImplementedError("get_task_or_404 not implemented (S1-04)")
+    task = Task.query.filter_by(id=task_id, owner_id=user_id).first()
+    if task is None:
+        raise NotFoundError("Task not found.")
+    return task
 
 
 def list_tasks(user_id: int, filters: dict | None = None) -> list:
-    """
-    TODO (S1-04 — Aadi): Return all tasks for user_id matching filters.
-    Results must always be scoped to user_id.
-    """
-    raise NotImplementedError("list_tasks not implemented (S1-04)")
+    query = Task.query.filter_by(owner_id=user_id)
+    filters = filters or {}
+
+    if filters.get("status"):
+        validate_status(filters["status"])
+        query = query.filter(Task.status == filters["status"])
+
+    if filters.get("priority"):
+        validate_priority(filters["priority"])
+        query = query.filter(Task.priority == filters["priority"])
+
+    if filters.get("category_id") not in (None, ""):
+        try:
+            category_id = int(filters["category_id"])
+        except (TypeError, ValueError):
+            raise ValidationError("Category ID must be an integer.")
+        query = query.filter(Task.category_id == category_id)
+
+    sort_by = filters.get("sort_by", "created_at")
+    order = filters.get("order", "desc")
+
+    allowed = {
+        "created_at": Task.created_at,
+        "updated_at": Task.updated_at,
+        "due_date": Task.due_date,
+        "priority": Task.priority,
+        "status": Task.status,
+        "title": Task.title,
+    }
+
+    if sort_by not in allowed:
+        raise ValidationError("Invalid sort field.")
+    if order not in {"asc", "desc"}:
+        raise ValidationError("Sort order must be asc or desc.")
+
+    sort_column = allowed[sort_by]
+    query = query.order_by(
+        (asc(sort_column) if order == "asc" else desc(sort_column)),
+        asc(Task.id),
+    )
+    return query.all()
 
 
 def create_task(owner_id: int, data: dict) -> Task:
-    """TODO (S1-04 — Aadi): Create and persist a task."""
-    raise NotImplementedError("create_task not implemented (S1-04)")
+    if not isinstance(data, dict) or not data.get("title"):
+        raise ValidationError("A valid task title is required.")
+
+    values = dict(data)
+
+    if "priority" in values:
+        validate_priority(values["priority"])
+    if "status" in values:
+        validate_status(values["status"])
+    if "due_date" in values:
+        values["due_date"] = validate_due_date(values["due_date"])
+
+    category_id = values.get("category_id")
+    if category_id is not None:
+        get_category_or_404(category_id, owner_id)
+
+    task = Task(owner_id=owner_id, **values)
+    db.session.add(task)
+    db.session.commit()
+    return task
 
 
 def update_task(task_id: int, user_id: int, data: dict) -> Task:
-    """TODO (S1-04 — Aadi): Update fields on an owned task."""
-    raise NotImplementedError("update_task not implemented (S1-04)")
+    task = get_task_or_404(task_id, user_id)
+
+    if not isinstance(data, dict) or not data:
+        raise ValidationError("At least one field must be provided.")
+
+    values = dict(data)
+
+    if "priority" in values:
+        validate_priority(values["priority"])
+    if "status" in values:
+        validate_status(values["status"])
+        if not allowed_status_transitions(task.status, values["status"]):
+            raise ValidationError("This status transition is not allowed.")
+    if "due_date" in values:
+        values["due_date"] = validate_due_date(values["due_date"])
+
+    if values.get("category_id") is not None:
+        get_category_or_404(values["category_id"], user_id)
+
+    for field, value in values.items():
+        setattr(task, field, value)
+
+    db.session.commit()
+    return task
 
 
 def delete_task(task_id: int, user_id: int) -> None:
-    """TODO (S1-04 — Aadi): Delete an owned task."""
-    raise NotImplementedError("delete_task not implemented (S1-04)")
-
+    task = get_task_or_404(task_id, user_id)
+    db.session.delete(task)
+    db.session.commit()

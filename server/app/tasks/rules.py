@@ -30,16 +30,12 @@ ALLOWED_STATUS_TRANSITIONS = {
 
 def validate_priority(priority: str) -> None:
     if not isinstance(priority, str) or priority not in VALID_PRIORITIES:
-        raise ValidationError(
-            "Priority must be one of: low, medium, high."
-        )
+        raise ValidationError("Priority must be one of: low, medium, high.")
 
 
 def validate_status(status: str) -> None:
     if not isinstance(status, str) or status not in VALID_STATUSES:
-        raise ValidationError(
-            "Status must be one of: pending, in_progress, completed."
-        )
+        raise ValidationError("Status must be one of: pending, in_progress, completed.")
 
 
 def validate_due_date(due_date_str: str | date | None) -> date | None:
@@ -58,9 +54,7 @@ def validate_due_date(due_date_str: str | date | None) -> date | None:
     try:
         parsed = datetime.strptime(due_date_str, "%Y-%m-%d").date()
     except ValueError as exc:
-        raise ValidationError(
-            "Due date must use YYYY-MM-DD format."
-        ) from exc
+        raise ValidationError("Due date must use YYYY-MM-DD format.") from exc
 
     if parsed.isoformat() != due_date_str:
         raise ValidationError("Due date must use YYYY-MM-DD format.")

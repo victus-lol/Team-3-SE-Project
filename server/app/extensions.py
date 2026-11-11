@@ -28,5 +28,5 @@ csrf = CSRFProtect()
 def load_user(user_id: str):
     """Load user from DB for Flask-Login."""
     from .models.user import User
-    return User.query.get(int(user_id))
 
+    return User.query.get(int(user_id))

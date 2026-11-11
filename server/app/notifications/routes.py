@@ -37,6 +37,4 @@ def list_notifications_route():
 def mark_read(notification_id: int):
     """Mark an owned notification as read; foreign IDs return 404."""
     notification = mark_notification_read(notification_id, current_user.id)
-    return jsonify(
-        success_response(notification.to_dict(), "Notification marked as read")
-    ), 200
+    return jsonify(success_response(notification.to_dict(), "Notification marked as read")), 200

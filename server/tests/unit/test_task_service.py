@@ -1,25 +1,27 @@
 import pytest
 
 from app.common.exceptions import NotFoundError, ValidationError
-from app.models.task import Task
 from app.models.category import Category
+from app.models.task import Task
 from app.tasks.service import (
     create_task,
-    list_tasks,
-    get_task_or_404,
-    update_task,
     delete_task,
+    get_task_or_404,
+    list_tasks,
+    update_task,
 )
 
 
 class TestTaskService:
-
     def test_create_task_valid(self, db, test_user):
-        task = create_task(test_user.id, {
-            "title": "Finish project",
-            "description": "Complete backend",
-            "priority": "high",
-        })
+        task = create_task(
+            test_user.id,
+            {
+                "title": "Finish project",
+                "description": "Complete backend",
+                "priority": "high",
+            },
+        )
 
         assert task.id is not None
         assert task.owner_id == test_user.id
@@ -29,9 +31,7 @@ class TestTaskService:
         with pytest.raises(ValidationError):
             create_task(test_user.id, {"title": ""})
 
-    def test_list_tasks_scoped_to_owner(
-        self, db, test_user, test_admin
-    ):
+    def test_list_tasks_scoped_to_owner(self, db, test_user, test_admin):
         create_task(test_user.id, {"title": "User task"})
         create_task(test_admin.id, {"title": "Admin task"})
 
@@ -40,9 +40,7 @@ class TestTaskService:
         assert len(tasks) == 1
         assert tasks[0].title == "User task"
 
-    def test_get_task_other_user_returns_404(
-        self, db, test_user, test_admin, sample_task
-    ):
+    def test_get_task_other_user_returns_404(self, db, test_user, test_admin, sample_task):
         with pytest.raises(NotFoundError):
             get_task_or_404(sample_task.id, test_admin.id)
 
@@ -63,15 +61,16 @@ class TestTaskService:
 
         assert db.session.get(Task, task_id) is None
 
-    def test_category_cross_user_rejected(
-        self, db, test_user, test_admin
-    ):
+    def test_category_cross_user_rejected(self, db, test_user, test_admin):
         category = Category.create(test_admin.id, "private")
         db.session.add(category)
         db.session.commit()
 
         with pytest.raises(NotFoundError):
-            create_task(test_user.id, {
-                "title": "Invalid category task",
-                "category_id": category.id,
-            })
+            create_task(
+                test_user.id,
+                {
+                    "title": "Invalid category task",
+                    "category_id": category.id,
+                },
+            )

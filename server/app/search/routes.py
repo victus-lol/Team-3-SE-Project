@@ -22,4 +22,3 @@ search_bp = Blueprint("search", __name__)
 
 # Note: primary search endpoint is GET /api/tasks (handled by tasks_bp)
 # This blueprint is reserved for any additional search-specific routes if needed.
-

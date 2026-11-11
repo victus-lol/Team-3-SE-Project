@@ -46,4 +46,3 @@ class TestAdminApi:
         Admin user listing never includes password_hash in response.
         """
         pass
-

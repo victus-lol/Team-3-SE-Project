@@ -40,4 +40,3 @@ class FakeNotificationProvider(BaseNotificationProvider):
 
     def last_sent(self) -> dict | None:
         return self.sent[-1] if self.sent else None
-

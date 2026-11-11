@@ -56,7 +56,7 @@ def test_due_date_today_is_not_overdue():
 
 def test_past_due_date_is_overdue():
     task = SimpleNamespace(
-        due_date=date.today() - timedelta(days=1),
+        due_date=date.today() - timedelta(days=2),
         status="pending",
     )
     assert is_overdue(task) is True

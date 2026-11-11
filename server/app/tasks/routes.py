@@ -26,9 +26,7 @@ def list_tasks_route():
         request.args.to_dict(),
     )
 
-    return jsonify(
-        success_response([task.to_dict() for task in tasks])
-    ), 200
+    return jsonify(success_response([task.to_dict() for task in tasks])), 200
 
 
 @tasks_bp.route("", methods=["POST"])
@@ -38,9 +36,7 @@ def create_task_route():
 
     result = handle_create_task(current_user.id, data)
 
-    return jsonify(
-        success_response(result, "Task created successfully.")
-    ), 201
+    return jsonify(success_response(result, "Task created successfully.")), 201
 
 
 @tasks_bp.route("/<int:task_id>", methods=["GET"])
@@ -48,9 +44,7 @@ def create_task_route():
 def get_task_route(task_id: int):
     task = get_task_or_404(task_id, current_user.id)
 
-    return jsonify(
-        success_response(task.to_dict())
-    ), 200
+    return jsonify(success_response(task.to_dict())), 200
 
 
 @tasks_bp.route("/<int:task_id>", methods=["PATCH"])
@@ -64,9 +58,7 @@ def update_task_route(task_id: int):
         data,
     )
 
-    return jsonify(
-        success_response(result, "Task updated successfully.")
-    ), 200
+    return jsonify(success_response(result, "Task updated successfully.")), 200
 
 
 @tasks_bp.route("/<int:task_id>", methods=["DELETE"])
@@ -74,6 +66,4 @@ def update_task_route(task_id: int):
 def delete_task_route(task_id: int):
     delete_task(task_id, current_user.id)
 
-    return jsonify(
-        success_response({}, "Task deleted successfully.")
-    ), 200
+    return jsonify(success_response({}, "Task deleted successfully.")), 200
