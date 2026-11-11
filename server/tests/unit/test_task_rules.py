@@ -1,105 +1,81 @@
-"""
-Task business rules unit tests.
-Owner: Aadi Kore (PES2UG24CS006)
-Sprint: S2 (S2-01, S2-02)
-Requirement IDs: TMA-F-020, TMA-F-021, TMA-F-022
-"""
+from datetime import date, timedelta
+from types import SimpleNamespace
 
 import pytest
 
-
-class TestPriorityRules:
-    @pytest.mark.skip(reason="Pending implementation: S2-01")
-    def test_valid_priorities_accepted(self):
-        """
-        TC-Org-01 | Owner: Aadi | Requirement: TMA-F-020 | Backlog: S2-01
-        validate_priority() accepts low/medium/high without raising.
-        """
-        pass
-
-    @pytest.mark.skip(reason="Pending implementation: S2-01")
-    def test_invalid_priority_raises_error(self):
-        """
-        TC-Org-01 | Owner: Aadi | Requirement: TMA-F-020 | Backlog: S2-01
-        validate_priority() raises ValidationError on 'urgent' or other invalid value.
-        """
-        pass
+from app.common.exceptions import ValidationError
+from app.tasks.rules import (
+    allowed_status_transitions,
+    is_overdue,
+    validate_due_date,
+    validate_priority,
+    validate_status,
+)
 
 
-class TestDueDateRules:
-    @pytest.mark.skip(reason="Pending implementation: S2-01")
-    def test_valid_date_string_parsed(self):
-        """
-        TC-Org-02 | Owner: Aadi | Requirement: TMA-F-020 | Backlog: S2-01
-        validate_due_date('2025-12-31') returns a date object.
-        """
-        pass
-
-    @pytest.mark.skip(reason="Pending implementation: S2-01")
-    def test_invalid_date_string_raises(self):
-        """
-        TC-Org-02 | Owner: Aadi | Requirement: TMA-F-020 | Backlog: S2-01
-        validate_due_date('not-a-date') raises ValidationError.
-        """
-        pass
-
-    @pytest.mark.skip(reason="Pending implementation: S2-01")
-    def test_none_due_date_returns_none(self):
-        """
-        TC-Org-02 | Owner: Aadi | Requirement: TMA-F-020 | Backlog: S2-01
-        validate_due_date(None) returns None (optional field).
-        """
-        pass
+@pytest.mark.parametrize("priority", ["low", "medium", "high"])
+def test_valid_priorities(priority):
+    assert validate_priority(priority) is None
 
 
-class TestStatusRules:
-    @pytest.mark.skip(reason="Pending implementation: S2-01")
-    def test_valid_statuses_accepted(self):
-        """
-        TC-Org-03 | Owner: Aadi | Requirement: TMA-F-020 | Backlog: S2-01
-        validate_status() accepts pending/in_progress/completed.
-        """
-        pass
-
-    @pytest.mark.skip(reason="Pending implementation: S2-01")
-    def test_invalid_status_raises(self):
-        """
-        TC-Org-03 | Owner: Aadi | Requirement: TMA-F-020 | Backlog: S2-01
-        validate_status('done') raises ValidationError.
-        """
-        pass
+@pytest.mark.parametrize("priority", ["urgent", "", None, "LOW"])
+def test_invalid_priorities(priority):
+    with pytest.raises(ValidationError):
+        validate_priority(priority)
 
 
-class TestOverdueRule:
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_past_due_date_is_overdue(self):
-        """
-        TC-Monitor-01 | Owner: Aadi | Requirement: TMA-F-022 | Backlog: S2-02
-        A task due yesterday is overdue.
-        """
-        pass
+@pytest.mark.parametrize("status", ["pending", "in_progress", "completed"])
+def test_valid_statuses(status):
+    assert validate_status(status) is None
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_today_due_date_is_not_overdue(self):
-        """
-        TC-Monitor-01 | Owner: Aadi | Requirement: TMA-F-022 | Backlog: S2-02
-        BOUNDARY: A task due TODAY is NOT overdue.
-        """
-        pass
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_completed_task_not_overdue(self):
-        """
-        TC-Monitor-01 | Owner: Aadi | Requirement: TMA-F-022 | Backlog: S2-02
-        A completed task is never overdue regardless of due date.
-        """
-        pass
+@pytest.mark.parametrize("status", ["done", "cancelled", "", None])
+def test_invalid_statuses(status):
+    with pytest.raises(ValidationError):
+        validate_status(status)
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_no_due_date_not_overdue(self):
-        """
-        TC-Monitor-01 | Owner: Aadi | Requirement: TMA-F-022 | Backlog: S2-02
-        A task without a due_date is never overdue.
-        """
-        pass
 
+def test_valid_due_date():
+    assert validate_due_date("2025-12-31") == date(2025, 12, 31)
+
+
+def test_none_due_date():
+    assert validate_due_date(None) is None
+
+
+@pytest.mark.parametrize("value", ["not-a-date", "2025-02-30", "31-12-2025"])
+def test_invalid_due_date(value):
+    with pytest.raises(ValidationError):
+        validate_due_date(value)
+
+
+def test_due_date_today_is_not_overdue():
+    task = SimpleNamespace(due_date=date.today(), status="pending")
+    assert is_overdue(task) is False
+
+
+def test_past_due_date_is_overdue():
+    task = SimpleNamespace(
+        due_date=date.today() - timedelta(days=1),
+        status="pending",
+    )
+    assert is_overdue(task) is True
+
+
+def test_completed_task_is_not_overdue():
+    task = SimpleNamespace(
+        due_date=date.today() - timedelta(days=1),
+        status="completed",
+    )
+    assert is_overdue(task) is False
+
+
+def test_task_without_due_date_is_not_overdue():
+    task = SimpleNamespace(due_date=None, status="pending")
+    assert is_overdue(task) is False
+
+
+def test_allowed_status_transitions():
+    assert allowed_status_transitions("pending", "in_progress")
+    assert allowed_status_transitions("in_progress", "completed")
+    assert not allowed_status_transitions("completed", "in_progress")
