@@ -2,14 +2,64 @@ openapi: 3.0.3
 info:
   title: Task Manager Application API
   version: 1.0.0
-  description: RESTful API for Agile Task Manager Application.
+  description: >
+    REST API for the Flask and React task manager. Authenticated endpoints use a
+    session cookie; state-changing browser requests also require X-CSRFToken.
+    All success and failure responses use the documented success/data or
+    success/error envelope. A standard user cannot call administrator routes.
+servers:
+  - url: /
+    description: Same-origin application server (Vite proxies /api in development)
+security:
+  - sessionCookie: []
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Flask session cookie established by POST /api/auth/login.
+  schemas:
+    TaskInput:
+      type: object
+      additionalProperties: false
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 2000, nullable: true }
+        priority: { type: string, enum: [low, medium, high] }
+        status: { type: string, enum: [pending, in_progress, completed] }
+        due_date: { type: string, format: date, nullable: true }
+        category_id: { type: integer, minimum: 1, nullable: true }
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, example: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: VALIDATION_ERROR }
+            message: { type: string, example: Invalid input provided }
+    Pagination:
+      type: object
+      required:
+        [page, per_page, total_items, total_pages, has_next, has_previous]
+      properties:
+        page: { type: integer, minimum: 1 }
+        per_page: { type: integer, minimum: 1, maximum: 100 }
+        total_items: { type: integer, minimum: 0 }
+        total_pages: { type: integer, minimum: 0 }
+        has_next: { type: boolean }
+        has_previous: { type: boolean }
 paths:
   /api/health:
     get:
       summary: Health check endpoint
+      security: []
       description: Returns service status.
       responses:
-        '200':
+        "200":
           description: Service is healthy
           content:
             application/json:
@@ -20,24 +70,27 @@ paths:
   /api/ready:
     get:
       summary: Readiness check endpoint
+      security: []
       description: Checks database connectivity.
       responses:
-        '200':
+        "200":
           description: Service ready
-        '503':
+        "503":
           description: Service unavailable
 
   /api/auth/csrf:
     get:
       summary: Retrieve CSRF token
+      security: []
       description: Generates a CSRF token to be included in X-CSRFToken header.
       responses:
-        '200':
+        "200":
           description: CSRF token successfully retrieved
 
   /api/auth/login:
     post:
       summary: Authenticate user
+      security: []
       requestBody:
         required: true
         content:
@@ -49,33 +102,111 @@ paths:
                 email: { type: string, format: email }
                 password: { type: string }
       responses:
-        '200':
+        "200":
           description: Successful authentication
-        '401':
+        "401":
           description: Invalid credentials
+        "429":
+          description: Login temporarily locked after repeated failures
 
   /api/auth/logout:
     post:
       summary: End session
+      security: []
       responses:
-        '200':
+        "200":
           description: Session cleared
 
   /api/auth/me:
     get:
       summary: Get current authenticated user
       responses:
-        '200':
+        "200":
           description: User object
-        '401':
+        "401":
+          description: Unauthenticated
+    patch:
+      summary: Update the current user's display name
+      description: Only name is editable; role, email, and account status cannot be changed here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 128 }
+      responses:
+        "200":
+          description: Updated safe user profile
+        "400":
+          description: Invalid or protected field provided
+        "401":
           description: Unauthenticated
 
   /api/auth/register:
     post:
-      summary: Register account (Scope-Pending)
+      summary: Register a standard user account
+      description: Public registration ignores role escalation; new accounts always receive the user role.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 128 }
+                email: { type: string, format: email, maxLength: 254 }
+                password: { type: string, minLength: 8, maxLength: 128 }
       responses:
-        '501':
-          description: Feature pending approval
+        "201":
+          description: Account created with standard user role
+        "400":
+          description: Invalid input
+        "409":
+          description: Email already registered
+
+  /api/auth/password-reset/request:
+    post:
+      summary: Request a password reset link
+      description: Returns the same response for registered and unregistered email addresses.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "202":
+          description: Generic confirmation; email delivery requires SMTP configuration
+
+  /api/auth/password-reset/confirm:
+    post:
+      summary: Set a new password from a reset link
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 8, maxLength: 128 }
+      responses:
+        "200":
+          description: Password updated and previous sessions revoked
+        "400":
+          description: Invalid, expired, used token, or invalid password
 
   /api/tasks:
     get:
@@ -101,100 +232,142 @@ paths:
           schema: { type: string, format: date }
         - name: overdue
           in: query
-          schema: { type: string, enum: ['true', 'false'] }
+          schema: { type: string, enum: ["true", "false"] }
         - name: sort_by
           in: query
-          schema: { type: string, enum: [created_at, updated_at, due_date, priority, status, title] }
+          schema:
+            {
+              type: string,
+              enum: [created_at, updated_at, due_date, priority, status, title],
+            }
         - name: order
           in: query
           schema: { type: string, enum: [asc, desc] }
+        - name: page
+          in: query
+          description: 1-based page number.
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: per_page
+          in: query
+          description: Page size, capped at 100.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
-        '200':
-          description: List of tasks
-        '401':
+        "200":
+          description: Task array in data plus sibling pagination metadata
+        "400":
+          description: Invalid filter, sort, or pagination value
+        "401":
           description: Unauthenticated
 
     post:
       summary: Create new task
+      description: Requires a signed-in session and X-CSRFToken. Creates a task owned by the current user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/TaskInput"
+                - type: object
+                  required: [title]
+      responses:
+        "201":
+          description: Task created
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthenticated
+        "413":
+          description: Request body exceeds the configured size limit
+
+  /api/tasks/{taskId}:
+    get:
+      summary: Get task details
+      description: Returns only a task owned by the authenticated user; another user's task is reported as not found.
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Task details
+        "404":
+          description: Task not found or not owned
+        "401":
+          description: Unauthenticated
+
+    patch:
+      summary: Update task
+      description: Requires at least one editable field and X-CSRFToken. Unknown fields are rejected.
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "200":
+          description: Task updated
+        "404":
+          description: Not found
+        "400":
+          description: Invalid task field or empty update body
+        "401":
+          description: Unauthenticated
+
+    delete:
+      summary: Delete task
+      description: Deletes a task owned by the authenticated user; requires X-CSRFToken.
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Task deleted
+        "404":
+          description: Not found
+        "401":
+          description: Unauthenticated
+
+  /api/categories:
+    get:
+      summary: List user categories
+      responses:
+        "200":
+          description: List of categories
+    post:
+      summary: Create a category for the current user
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [title]
+              required: [name]
               properties:
-                title: { type: string, maxLength: 200 }
-                description: { type: string }
-                priority: { type: string, enum: [low, medium, high] }
-                status: { type: string, enum: [pending, in_progress, completed] }
-                due_date: { type: string, format: date }
-                category_id: { type: integer, nullable: true }
+                name: { type: string, minLength: 1, maxLength: 100 }
       responses:
-        '201':
-          description: Task created
-        '400':
-          description: Validation error
-        '401':
-          description: Unauthenticated
-
-  /api/tasks/{taskId}:
-    get:
-      summary: Get task details
-      parameters:
-        - name: taskId
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Task details
-        '404':
-          description: Task not found or not owned
-
-    patch:
-      summary: Update task
-      parameters:
-        - name: taskId
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Task updated
-        '404':
-          description: Not found
-
-    delete:
-      summary: Delete task
-      parameters:
-        - name: taskId
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: Task deleted
-        '404':
-          description: Not found
-
-  /api/categories:
-    get:
-      summary: List user categories
-      responses:
-        '200':
-          description: List of categories
-    post:
-      summary: Create category (Scope-Pending)
-      responses:
-        '501':
-          description: Scope pending
+        "201":
+          description: Category created
+        "400":
+          description: Invalid category name
+        "409":
+          description: Category name already exists for this user
 
   /api/dashboard/summary:
     get:
       summary: Get task counts summary for dashboard
       responses:
-        '200':
+        "200":
           description: Counts of pending, in_progress, completed
 
   /api/notifications:
@@ -202,7 +375,7 @@ paths:
       summary: List notifications for the authenticated user
       description: Returns only notifications owned by the current session user, newest first. Uses the standard success response envelope.
       responses:
-        '200':
+        "200":
           description: Notifications retrieved
           content:
             application/json:
@@ -222,11 +395,18 @@ paths:
                         user_id: { type: integer }
                         task_id: { type: integer, nullable: true }
                         message: { type: string, maxLength: 512 }
-                        scheduled_at: { type: string, format: date-time, nullable: true }
-                        delivered_at: { type: string, format: date-time, nullable: true }
-                        status: { type: string, enum: [pending, delivered, read, failed] }
-                        created_at: { type: string, format: date-time, nullable: true }
-        '401':
+                        scheduled_at:
+                          { type: string, format: date-time, nullable: true }
+                        delivered_at:
+                          { type: string, format: date-time, nullable: true }
+                        status:
+                          {
+                            type: string,
+                            enum: [pending, delivered, read, failed],
+                          }
+                        created_at:
+                          { type: string, format: date-time, nullable: true }
+        "401":
           description: Unauthenticated
 
   /api/notifications/{notificationId}/read:
@@ -239,18 +419,39 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200':
+        "200":
           description: Notification marked as read
-        '401':
+        "401":
           description: Unauthenticated
-        '404':
+        "404":
           description: Notification not found or not owned by the current user
 
   /api/admin/users:
     get:
       summary: List all users (Admin only)
+      description: Requires an authenticated session with the admin role. Returned users use the safe serializer and omit password hashes.
       responses:
-        '200':
+        "200":
           description: List of users
-        '403':
+        "403":
           description: Forbidden - admin required
+        "401":
+          description: Unauthenticated
+
+  /api/admin/audit-logs:
+    get:
+      summary: Read administrator audit history (Admin only)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: Secret-free audit events with pagination metadata
+        "401":
+          description: Unauthenticated
+        "403":
+          description: Admin role required

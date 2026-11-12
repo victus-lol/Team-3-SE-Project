@@ -45,6 +45,7 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat: add administrator audit trail | 2026-11-12 | PR #49 merged a secret-free audit model, migration, admin-only listing endpoint, and audit events for user/audit listing access. Backend 163 passed; Ruff clean. |
 | feat: add secure password reset flow | 2026-11-12 | PR #50 merged SMTP-configurable reset delivery, hashed single-use/expiring tokens, session revocation, migration, API/UI flows and recovery tests. Backend 167 passed; frontend 27 passed, lint/build clean; Playwright 24 passed; Ruff and migration upgrade passed. SMTP credentials are intentionally not supplied. |
 | test: add task-list performance benchmark and refresh evidence | 2026-11-12 | PR #51 completes the authenticated 20-user/30-second benchmark, current API reference/OpenAPI contract, database schema, traceability matrix, and test reports. Local p90: 172.89 ms; 0 failed requests. Local backend statement coverage: 84.69%; branch coverage: 64.09%. |
+| docs: align API reference and QA traceability with current code | 2026-11-12 | PR #51 documents current endpoint access, request rules, response errors, migrations, test-to-requirement evidence, and separate statement/branch coverage. API contract formatting/syntax and local test evidence were checked. |
 
 ## Remaining integration work
 
