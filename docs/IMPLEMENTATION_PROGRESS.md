@@ -22,7 +22,8 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - No hosting provider is configured. GitHub Releases distribute a deployable bundle; live deployment needs a hosting target and credentials.
 - The current `main` includes the notification API and task search/filter APIs; the integration checks in this feature branch exercise those routes without changing backend modules.
 - PR #47 (`codex/project-completion`) completes public standard-user registration, category creation, admin user listing, and activates previously skipped backend/browser workflows. It also adds persistent login throttling, API security headers, request-size limits, and the Alembic migration for throttle state. Local backend suite: 153 passed; frontend: 25 passed with lint/build clean; E2E browser suite passed locally after fixing the notification row selector. GitHub checks are running before merge.
-- PR #48 work (current branch) adds authenticated profile name updates and paginated task-list metadata while preserving the existing task array in `data`. Pagination validation is capped at 100 items per page and remains user-scoped; backend suite: 159 passed, frontend: 25 passed, and Playwright: 23 passed.
+- PR #48 (merged) adds authenticated profile name updates and paginated task-list metadata while preserving the existing task array in `data`. Pagination validation is capped at 100 items per page and remains user-scoped; backend suite: 159 passed, frontend: 25 passed, and Playwright: 23 passed.
+- PR #49 work (current branch) records administrator user-list and audit-history access in a secret-free, database-backed audit log. The read endpoint is admin-only and paginated; focused admin API checks pass. This covers the only sensitive admin operation currently implemented; no admin mutation endpoints exist yet.
 
 ## Run locally
 
@@ -53,6 +54,7 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat: complete account and core API workflows | 2026-11-12 | PR #47 implemented public user registration, category creation, admin user listing, and activated the backend/browser workflows. Merged after backend, frontend, E2E, security audit, placeholder, and package checks passed. |
 | feat: harden login and API responses | 2026-11-12 | PR #47 added persistent login throttling, configurable security headers/request size, and a migration; verified in the same full CI run. |
 | feat: add profile editing and paginated task lists | 2026-11-12 | Current PR #48 adds self-profile name updates and safe, user-scoped task pagination with metadata while retaining the existing task response array. Local checks: backend 159 passed; frontend 25 passed, lint/build passed; Playwright 23 passed. |
+| feat: add administrator audit trail | 2026-11-12 | Current PR #49 adds a secret-free audit model, migration, admin-only listing endpoint, and records access to user/audit listings. Full backend suite: 163 passed; Ruff clean. |
 
 ## Remaining integration work
 
