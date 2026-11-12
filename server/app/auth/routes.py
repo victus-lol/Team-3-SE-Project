@@ -8,12 +8,14 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user
 from flask_wtf.csrf import generate_csrf
 
+from ..common.exceptions import AuthenticationError, RateLimitError, ValidationError
 from ..common.responses import (
-    not_implemented_response,
     success_response,
 )
 from ..middleware.authorization import login_required_json
 from .controller import handle_login, handle_logout
+from .service import create_registered_user
+from .throttle import clear_login_failures, is_login_locked, record_failed_login
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -35,7 +37,16 @@ def get_csrf_token():
 def login():
     """Authenticate a user and create a session."""
     request_data = request.get_json(silent=True)
-    user_data = handle_login(request_data)
+    email = request_data.get("email") if isinstance(request_data, dict) else None
+    client_address = request.remote_addr
+    if is_login_locked(email, client_address):
+        raise RateLimitError("Invalid email or password. Please try again later.")
+    try:
+        user_data = handle_login(request_data)
+    except AuthenticationError:
+        record_failed_login(email, client_address)
+        raise
+    clear_login_failures(email, client_address)
 
     return jsonify(success_response(user_data, "Login successful.")), 200
 
@@ -62,5 +73,9 @@ def me():
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
-    """Registration is outside the currently approved scope."""
-    return jsonify(not_implemented_response("Registration (scope-pending)")), 501
+    """Register a standard user; role assignment remains administrator-only."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        raise ValidationError("A valid JSON request body is required.")
+    user = create_registered_user(data.get("name"), data.get("email"), data.get("password"))
+    return jsonify(success_response(user.to_dict(), "Account created successfully.")), 201

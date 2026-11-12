@@ -15,8 +15,9 @@ TODO checklist:
 
 from flask import Blueprint, jsonify
 
-from ..common.responses import not_implemented_response
+from ..common.responses import success_response
 from ..middleware.authorization import admin_required
+from .service import list_users as get_users
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -24,8 +25,6 @@ admin_bp = Blueprint("admin", __name__)
 @admin_bp.route("/users", methods=["GET"])
 @admin_required
 def list_users():
-    """
-    TODO (S2-06 — Balaji): List all users (admin only).
-    TC-Admin-01 | Requirement: TMA-SR-001 | Backlog: S2-06
-    """
-    return jsonify(not_implemented_response("Admin user listing")), 501
+    """List users safely for authenticated administrators."""
+    users = get_users()
+    return jsonify(success_response([user.to_dict() for user in users])), 200

@@ -34,3 +34,19 @@ class TestCategoriesApi:
 
         data = response.get_json()
         assert all(item["user_id"] != test_admin.id for item in data["data"])
+
+    def test_create_category_normalizes_name(self, auth_client):
+        response = auth_client.post("/api/categories", json={"name": "  Research  "})
+
+        assert response.status_code == 201
+        assert response.get_json()["data"]["name"] == "research"
+
+    def test_create_duplicate_category_returns_conflict(self, auth_client, sample_category):
+        response = auth_client.post("/api/categories", json={"name": sample_category.name.upper()})
+
+        assert response.status_code == 409
+
+    def test_create_category_validates_name(self, auth_client):
+        response = auth_client.post("/api/categories", json={"name": " "})
+
+        assert response.status_code == 400

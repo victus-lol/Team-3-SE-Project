@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { createTask, signIn } from './helpers.js'
 
 /**
  * Task CRUD E2E tests.
@@ -8,16 +9,35 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Task CRUD Flow', () => {
-  test.skip('create a new task and see it listed', async ({ page }) => {
-    // TC-Task-01 | Owner: Akash | Requirement: TMA-F-010 | Backlog: S2-09
+  test('create a new task and see it listed', async ({ page }) => {
+    await signIn(page)
+    const title = `E2E create ${Date.now()}`
+    await createTask(page, { title })
   })
 
-  test.skip('update an existing task status and priority', async ({ page }) => {
-    // TC-Task-02 | Owner: Akash | Requirement: TMA-F-011 | Backlog: S2-09
+  test('update an existing task status and priority', async ({ page }) => {
+    await signIn(page)
+    const title = `E2E update ${Date.now()}`
+    await createTask(page, { title })
+    await page.getByRole('button', { name: `Edit ${title}` }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Priority').selectOption('high')
+    await dialog.getByLabel('Status').selectOption('in_progress')
+    await dialog.getByRole('button', { name: 'Save changes' }).click()
+    const task = page.locator('.task-card').filter({ has: page.getByRole('link', { name: title }) })
+    await expect(task.getByText('high priority')).toBeVisible()
+    await expect(task.getByText('in progress')).toBeVisible()
   })
 
-  test.skip('delete a task after confirmation', async ({ page }) => {
-    // TC-Task-03 | Owner: Akash | Requirement: TMA-F-012 | Backlog: S2-09
+  test('delete a task after confirmation', async ({ page }) => {
+    await signIn(page)
+    const title = `E2E delete ${Date.now()}`
+    await createTask(page, { title })
+    await page.getByRole('button', { name: `Delete ${title}` }).click()
+    const dialog = page.getByRole('alertdialog')
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: 'Delete task' }).click()
+    await expect(page.getByRole('link', { name: title })).toHaveCount(0)
   })
 })
 

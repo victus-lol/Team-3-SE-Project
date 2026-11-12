@@ -1,4 +1,12 @@
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
+
+const windowsVenvPython = resolve('..', 'server', 'venv', 'Scripts', 'python.exe')
+const pythonCommand = process.env.E2E_PYTHON
+  || (process.platform === 'win32' && existsSync(windowsVenvPython)
+    ? `"${windowsVenvPython}"`
+    : 'python')
 
 /**
  * Playwright E2E configuration.
@@ -15,7 +23,8 @@ export default defineConfig({
   },
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // The browser suite shares one disposable SQLite server between tests.
+  workers: 1,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
@@ -34,7 +43,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'python tests/e2e/start_server.py',
+      command: `${pythonCommand} tests/e2e/start_server.py`,
       cwd: '..',
       url: 'http://127.0.0.1:5000/api/ready',
       timeout: 120000,

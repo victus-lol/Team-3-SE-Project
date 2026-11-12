@@ -36,6 +36,10 @@ class BaseConfig:
     REMEMBER_COOKIE_HTTPONLY: bool = True
     REMEMBER_COOKIE_SAMESITE: str = "Lax"
     PERMANENT_SESSION_LIFETIME: int = 86400  # 24 hours
+    MAX_CONTENT_LENGTH: int = int(os.environ.get("MAX_CONTENT_LENGTH", str(1024 * 1024)))
+    LOGIN_MAX_ATTEMPTS: int = int(os.environ.get("LOGIN_MAX_ATTEMPTS", "5"))
+    LOGIN_LOCKOUT_SECONDS: int = int(os.environ.get("LOGIN_LOCKOUT_SECONDS", "300"))
+    LOGIN_ATTEMPT_WINDOW_SECONDS: int = int(os.environ.get("LOGIN_ATTEMPT_WINDOW_SECONDS", "900"))
 
     # ── Database ──────────────────────────────────────────────────────────────
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False

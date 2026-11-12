@@ -4,7 +4,10 @@ Owner: Aadi Kore (PES2UG24CS006)
 Sprint: S2 (S2-01)
 """
 
-from ..common.exceptions import NotFoundError
+from sqlalchemy.exc import IntegrityError
+
+from ..common.exceptions import ConflictError, NotFoundError, ValidationError
+from ..extensions import db
 from ..models.category import Category
 
 
@@ -18,8 +21,17 @@ def list_categories(user_id: int) -> list:
 
 
 def create_category(user_id: int, name: str) -> Category:
-    """Category creation is pending scope approval."""
-    raise NotImplementedError("Category creation is pending scope approval.")
+    """Create a normalized category for one user."""
+    if not isinstance(name, str) or not name.strip() or len(name.strip()) > 100:
+        raise ValidationError("Category name must contain 1 to 100 characters.")
+    category = Category.create(user_id, name)
+    db.session.add(category)
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        db.session.rollback()
+        raise ConflictError("A category with this name already exists.") from exc
+    return category
 
 
 def get_category_or_404(category_id: int, user_id: int) -> Category:

@@ -1,8 +1,11 @@
-"""
-Authentication service — business logic layer.
+"""Authentication service — business logic layer.
 Owner: Balaji Gowda S R (PES2UG25CS804)
 Sprint: S1 (S1-03)
 """
+
+import re
+
+from sqlalchemy.exc import IntegrityError
 
 from ..common.exceptions import (
     AuthenticationError,
@@ -56,6 +59,31 @@ def create_admin_user(name: str, email: str, password: str) -> User:
     db.session.commit()
 
     return admin
+
+
+def create_registered_user(name: str, email: str, password: str) -> User:
+    """Create a standard user without allowing public role assignment."""
+    if not isinstance(name, str) or not name.strip() or len(name.strip()) > 128:
+        raise ValidationError("Name must contain 1 to 128 characters.")
+    if not isinstance(email, str) or len(email.strip()) > 254:
+        raise ValidationError("Enter a valid email address.")
+    if not isinstance(password, str) or len(password) < 8 or len(password) > 128:
+        raise ValidationError("Password must contain 8 to 128 characters.")
+
+    normalized_email = email.strip().lower()
+    if not re.fullmatch(r"[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+", normalized_email):
+        raise ValidationError("Enter a valid email address.")
+    if get_user_by_email(normalized_email):
+        raise ConflictError("An account with this email already exists.")
+
+    user = User.create(name.strip(), normalized_email, password, role="user")
+    db.session.add(user)
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        db.session.rollback()
+        raise ConflictError("An account with this email already exists.") from exc
+    return user
 
 
 def get_user_by_email(email: str) -> User | None:

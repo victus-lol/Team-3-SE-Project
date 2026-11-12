@@ -76,7 +76,7 @@ test.describe('Frontend feature workflows', () => {
 
     await page.getByRole('button', { name: 'Delete E2E task lifecycle updated' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete task' }).click()
-    await expect(page.getByText('A clear slate')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'E2E task lifecycle updated' })).toHaveCount(0)
   })
 
   test('dashboard summary renders from the live API', async ({ page }) => {
@@ -89,10 +89,11 @@ test.describe('Frontend feature workflows', () => {
   test('notifications load and can be marked read through the live API', async ({ page }) => {
     await signIn(page)
     await page.getByRole('link', { name: 'Notifications' }).click()
-    await expect(page.getByText('E2E reminder for notification workflow')).toBeVisible()
-    await page.getByRole('button', { name: 'Mark as read' }).click()
-    await expect(page.getByText('Read')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Mark as read' })).toHaveCount(0)
+    const reminder = page.locator('.task-preview').filter({ hasText: 'E2E reminder for notification workflow' })
+    await expect(reminder).toBeVisible()
+    await reminder.getByRole('button', { name: 'Mark as read' }).click()
+    await expect(reminder.getByText('Read', { exact: true })).toBeVisible()
+    await expect(reminder.getByRole('button', { name: 'Mark as read' })).toHaveCount(0)
   })
 
   test('workspace supports keyboard entry and narrow mobile widths', async ({ page }) => {

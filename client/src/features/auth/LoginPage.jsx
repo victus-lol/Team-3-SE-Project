@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext.jsx'
 import Icon from '../../components/Icon.jsx'
 
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const from = location.state?.from?.pathname || '/dashboard'
+  const notice = location.state?.notice || ''
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -48,6 +49,7 @@ export default function LoginPage() {
           <p className="eyebrow">Welcome back</p>
           <h2>Sign in</h2>
           <p className="login-form-intro">Use your account credentials to continue to your workspace.</p>
+          {notice && <div className="notice" role="status">{notice}</div>}
           {formError && <div className="error-message" role="alert">{formError}</div>}
           <form className="form-grid" onSubmit={handleSubmit}>
             <div className="form-field">
@@ -62,7 +64,7 @@ export default function LoginPage() {
               {submitting ? 'Signing in…' : <>Continue to workspace <Icon name="arrow" size={15} /></>}
             </button>
           </form>
-          <p className="login-footnote">Accounts are provisioned by your project administrator.</p>
+          <p className="login-footnote">New to Task Manager? <Link to="/register">Create an account</Link></p>
         </div>
       </section>
     </main>

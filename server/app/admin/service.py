@@ -1,15 +1,10 @@
-"""
-Admin service.
-Owner: Balaji Gowda S R (PES2UG25CS804)
-Sprint: S2 (S2-06)
+"""Admin user-management query service."""
 
-TODO checklist:
-  [ ] Implement list_users(page, per_page) → list[User]
-  [ ] Implement get_user(user_id) → User | None
-  [ ] Implement deactivate_user(user_id) if in scope
-"""
+from ..models.user import User
 
 
 def list_users(page: int = 1, per_page: int = 20) -> list:
-    """TODO (S2-06 — Balaji): Return paginated list of all users."""
-    raise NotImplementedError("list_users not implemented (S2-06)")
+    """Return a stable page of users without exposing authentication secrets."""
+    return User.query.order_by(User.id.asc()).paginate(
+        page=max(1, page), per_page=min(max(1, per_page), 100), error_out=False
+    ).items
