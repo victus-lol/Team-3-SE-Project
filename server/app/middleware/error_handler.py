@@ -50,4 +50,3 @@ def register_error_handlers(app: Flask) -> None:
         # Never expose details in production
         app.logger.exception("Unhandled server error")
         return jsonify(error_response("INTERNAL_ERROR", "An unexpected error occurred.")), 500
-

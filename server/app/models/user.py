@@ -54,9 +54,7 @@ class User(UserMixin, db.Model):
     __table_args__ = (
         db.CheckConstraint("role IN ('user', 'admin')", name="ck_users_role"),
         db.CheckConstraint("length(name) > 0", name="ck_users_name_nonempty"),
-        db.CheckConstraint(
-            "length(email) >= 3 AND email LIKE '%@%'", name="ck_users_email_format"
-        ),
+        db.CheckConstraint("length(email) >= 3 AND email LIKE '%@%'", name="ck_users_email_format"),
     )
 
     # ── Relationships ─────────────────────────────────────────────────────────
@@ -148,4 +146,3 @@ class User(UserMixin, db.Model):
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r} role={self.role!r}>"
-

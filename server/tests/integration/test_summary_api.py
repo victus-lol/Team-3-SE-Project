@@ -95,4 +95,3 @@ class TestDashboardApi:
             "in_progress": 1,
             "completed": 1,
         }
-

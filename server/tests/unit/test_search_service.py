@@ -1,67 +1,136 @@
 """
 Search service unit tests.
 Owner: Aadi Kore (PES2UG24CS006)
-Sprint: S2 (S2-02)
-Requirement IDs: TMA-F-021, TMA-F-022, TMA-F-023
 """
 
-import pytest
+from datetime import date, timedelta
+
+from app.search.service import search_tasks
+from app.tasks.service import create_task
 
 
 class TestSearchService:
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_keyword_search_matches_title(self, db, test_user, sample_task):
-        """
-        TC-Search-01 | Owner: Aadi | Requirement: TMA-F-021 | Backlog: S2-02
-        Keyword in title returns matching task.
-        """
-        pass
+    def test_keyword_search_matches_title(self, db, test_user):
+        create_task(test_user.id, {"title": "Shopping list"})
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
-    def test_keyword_search_matches_description(self, db, test_user, sample_task):
-        """
-        TC-Search-01 | Owner: Aadi | Requirement: TMA-F-021 | Backlog: S2-02
-        Keyword in description returns matching task.
-        """
-        pass
+        results = search_tasks(test_user.id, {"q": "Shopping"})
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
+        assert len(results) == 1
+        assert results[0].title == "Shopping list"
+
+    def test_keyword_search_matches_description(self, db, test_user):
+        create_task(
+            test_user.id,
+            {
+                "title": "Task",
+                "description": "Prepare presentation",
+            },
+        )
+
+        results = search_tasks(
+            test_user.id,
+            {"q": "presentation"},
+        )
+
+        assert len(results) == 1
+
     def test_filter_by_status(self, db, test_user):
-        """
-        TC-Search-02 | Owner: Aadi | Requirement: TMA-F-021 | Backlog: S2-02
-        Filter by status returns only matching tasks.
-        """
-        pass
+        create_task(test_user.id, {"title": "Pending"})
+        create_task(
+            test_user.id,
+            {
+                "title": "Completed",
+                "status": "completed",
+            },
+        )
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
+        results = search_tasks(
+            test_user.id,
+            {"status": "completed"},
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "completed"
+
     def test_filter_by_priority(self, db, test_user):
-        """
-        TC-Search-02 | Owner: Aadi | Requirement: TMA-F-021 | Backlog: S2-02
-        Filter by priority returns only matching tasks.
-        """
-        pass
+        create_task(
+            test_user.id,
+            {
+                "title": "Urgent",
+                "priority": "high",
+            },
+        )
+        create_task(
+            test_user.id,
+            {
+                "title": "Normal",
+                "priority": "low",
+            },
+        )
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
+        results = search_tasks(
+            test_user.id,
+            {"priority": "high"},
+        )
+
+        assert len(results) == 1
+        assert results[0].title == "Urgent"
+
     def test_sort_by_due_date_deterministic(self, db, test_user):
-        """
-        TC-Search-03 | Owner: Aadi | Requirement: TMA-F-023 | Backlog: S2-02
-        Sorting by due_date is deterministic (secondary sort by id).
-        """
-        pass
+        create_task(
+            test_user.id,
+            {
+                "title": "Later",
+                "due_date": (date.today() + timedelta(days=5)).isoformat(),
+            },
+        )
+        create_task(
+            test_user.id,
+            {
+                "title": "Earlier",
+                "due_date": (date.today() + timedelta(days=1)).isoformat(),
+            },
+        )
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
+        results = search_tasks(
+            test_user.id,
+            {"sort_by": "due_date", "order": "asc"},
+        )
+
+        assert results[0].title == "Earlier"
+
     def test_search_scoped_to_user(self, db, test_user, test_admin):
-        """
-        TC-Sec-01 | Owner: Aadi | Requirement: TMA-F-021 | Backlog: S2-02
-        Search results never include another user's tasks.
-        """
-        pass
+        create_task(test_user.id, {"title": "Private task"})
+        create_task(test_admin.id, {"title": "Private task"})
 
-    @pytest.mark.skip(reason="Pending implementation: S2-02")
+        results = search_tasks(
+            test_user.id,
+            {"q": "Private"},
+        )
+
+        assert len(results) == 1
+        assert results[0].owner_id == test_user.id
+
     def test_overdue_filter(self, db, test_user):
-        """
-        TC-Monitor-01 | Owner: Aadi | Requirement: TMA-F-022 | Backlog: S2-02
-        overdue=true filter returns only overdue tasks.
-        """
-        pass
+        create_task(
+            test_user.id,
+            {
+                "title": "Overdue",
+                "due_date": (date.today() - timedelta(days=2)).isoformat(),
+            },
+        )
+        create_task(
+            test_user.id,
+            {
+                "title": "Future",
+                "due_date": (date.today() + timedelta(days=2)).isoformat(),
+            },
+        )
 
+        results = search_tasks(
+            test_user.id,
+            {"overdue": "true"},
+        )
+
+        assert len(results) == 1
+        assert results[0].title == "Overdue"

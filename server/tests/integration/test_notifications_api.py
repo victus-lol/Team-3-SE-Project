@@ -33,23 +33,17 @@ class TestNotificationsApi:
         """TC-Notify-01 | Requirement: TMA-F-041 | Backlog: S2-07"""
         notification = create_notification(test_user.id, "Please read")
 
-        response = auth_client.patch(
-            f"/api/notifications/{notification.id}/read"
-        )
+        response = auth_client.patch(f"/api/notifications/{notification.id}/read")
 
         assert response.status_code == 200
         body = response.get_json()
         assert body["success"] is True
         assert body["data"]["status"] == "read"
 
-    def test_cannot_mark_another_users_notification_read(
-        self, auth_client, db, test_admin
-    ):
+    def test_cannot_mark_another_users_notification_read(self, auth_client, db, test_admin):
         """Foreign notification IDs must be hidden with 404."""
         notification = create_notification(test_admin.id, "Not yours")
 
-        response = auth_client.patch(
-            f"/api/notifications/{notification.id}/read"
-        )
+        response = auth_client.patch(f"/api/notifications/{notification.id}/read")
 
         assert response.status_code == 404

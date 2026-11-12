@@ -10,8 +10,6 @@ TODO checklist:
 """
 
 
-
 def list_users(page: int = 1, per_page: int = 20) -> list:
     """TODO (S2-06 — Balaji): Return paginated list of all users."""
     raise NotImplementedError("list_users not implemented (S2-06)")
-

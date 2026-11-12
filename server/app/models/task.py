@@ -100,4 +100,3 @@ class Task(db.Model):
 
     def __repr__(self) -> str:
         return f"<Task id={self.id} title={self.title!r} status={self.status!r}>"
-

@@ -54,4 +54,3 @@ class ConflictError(AppError):
 
     def __init__(self, message: str = "Resource already exists."):
         super().__init__(message)
-

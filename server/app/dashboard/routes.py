@@ -32,4 +32,3 @@ def summary():
     """
     counts = get_summary(current_user.id)
     return jsonify(success_response(counts, "Dashboard summary retrieved successfully.")), 200
-

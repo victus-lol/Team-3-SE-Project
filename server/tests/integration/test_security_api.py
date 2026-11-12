@@ -14,12 +14,18 @@ class TestSecurityApiLive:
         TC-Sec-01 | Owner: Aadi | Requirement: TMA-SR-001 | Backlog: S2-10
         All task endpoints require authentication (401 when not logged in).
         """
-        for endpoint in ["/api/tasks", "/api/tasks/1", "/api/dashboard/summary",
-                         "/api/notifications", "/api/admin/users"]:
+        for endpoint in [
+            "/api/tasks",
+            "/api/tasks/1",
+            "/api/dashboard/summary",
+            "/api/notifications",
+            "/api/admin/users",
+        ]:
             resp = client.get(endpoint)
-            assert resp.status_code in (401, 405), (
-                f"Expected 401 for {endpoint}, got {resp.status_code}"
-            )
+            assert resp.status_code in (
+                401,
+                405,
+            ), f"Expected 401 for {endpoint}, got {resp.status_code}"
 
     def test_error_response_never_includes_stack_trace(self, client):
         """
@@ -57,4 +63,3 @@ class TestSecurityPending:
         (Additional coverage beyond test_admin_api.py)
         """
         pass
-

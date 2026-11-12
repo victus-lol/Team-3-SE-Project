@@ -63,4 +63,3 @@ class TestDashboardService:
 
         assert user_counts == {"pending": 1, "in_progress": 0, "completed": 0}
         assert admin_counts == {"pending": 1, "in_progress": 0, "completed": 1}
-

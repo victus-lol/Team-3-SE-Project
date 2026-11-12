@@ -1,69 +1,76 @@
-"""
-Task service unit tests.
-Owner: Aadi Kore (PES2UG24CS006)
-Sprint: S1 (S1-04), S2 (S2-01)
-Requirement IDs: TMA-F-010, TMA-F-011, TMA-F-012
-"""
-
 import pytest
+
+from app.common.exceptions import NotFoundError, ValidationError
+from app.models.category import Category
+from app.models.task import Task
+from app.tasks.service import (
+    create_task,
+    delete_task,
+    get_task_or_404,
+    list_tasks,
+    update_task,
+)
 
 
 class TestTaskService:
-    """Unit tests for server/app/tasks/service.py"""
-
-    @pytest.mark.skip(reason="Pending implementation: S1-04")
     def test_create_task_valid(self, db, test_user):
-        """
-        TC-Task-01 | Owner: Aadi | Requirement: TMA-F-010 | Backlog: S1-04
-        create_task() persists and returns a Task with correct owner.
-        """
-        pass
+        task = create_task(
+            test_user.id,
+            {
+                "title": "Finish project",
+                "description": "Complete backend",
+                "priority": "high",
+            },
+        )
 
-    @pytest.mark.skip(reason="Pending implementation: S1-04")
+        assert task.id is not None
+        assert task.owner_id == test_user.id
+        assert task.title == "Finish project"
+
     def test_create_task_empty_title_rejected(self, db, test_user):
-        """
-        TC-Task-01 | Owner: Aadi | Requirement: TMA-F-010 | Backlog: S1-04
-        create_task() raises ValidationError on empty title.
-        """
-        pass
+        with pytest.raises(ValidationError):
+            create_task(test_user.id, {"title": ""})
 
-    @pytest.mark.skip(reason="Pending implementation: S1-04")
     def test_list_tasks_scoped_to_owner(self, db, test_user, test_admin):
-        """
-        TC-Task-01 | Owner: Aadi | Requirement: TMA-F-010 | Backlog: S1-04
-        list_tasks() returns only the requesting user's tasks.
-        """
-        pass
+        create_task(test_user.id, {"title": "User task"})
+        create_task(test_admin.id, {"title": "Admin task"})
 
-    @pytest.mark.skip(reason="Pending implementation: S1-04")
+        tasks = list_tasks(test_user.id)
+
+        assert len(tasks) == 1
+        assert tasks[0].title == "User task"
+
     def test_get_task_other_user_returns_404(self, db, test_user, test_admin, sample_task):
-        """
-        TC-Sec-01 | Owner: Aadi | Requirement: TMA-F-010 | Backlog: S1-04
-        get_task_or_404() raises NotFoundError when accessed by non-owner.
-        """
-        pass
+        with pytest.raises(NotFoundError):
+            get_task_or_404(sample_task.id, test_admin.id)
 
-    @pytest.mark.skip(reason="Pending implementation: S1-04")
     def test_update_task_owned(self, db, test_user, sample_task):
-        """
-        TC-Task-02 | Owner: Aadi | Requirement: TMA-F-011 | Backlog: S1-04
-        update_task() modifies fields on an owned task.
-        """
-        pass
+        updated = update_task(
+            sample_task.id,
+            test_user.id,
+            {"title": "Updated task", "priority": "high"},
+        )
 
-    @pytest.mark.skip(reason="Pending implementation: S1-04")
+        assert updated.title == "Updated task"
+        assert updated.priority == "high"
+
     def test_delete_task_owned(self, db, test_user, sample_task):
-        """
-        TC-Task-03 | Owner: Aadi | Requirement: TMA-F-012 | Backlog: S1-04
-        delete_task() removes the task from the database.
-        """
-        pass
+        task_id = sample_task.id
 
-    @pytest.mark.skip(reason="Pending implementation: S1-04")
+        delete_task(task_id, test_user.id)
+
+        assert db.session.get(Task, task_id) is None
+
     def test_category_cross_user_rejected(self, db, test_user, test_admin):
-        """
-        TC-Org-04 | Owner: Aadi | Requirement: TMA-F-030 | Backlog: S1-04
-        create_task() raises ValidationError when category belongs to different user.
-        """
-        pass
+        category = Category.create(test_admin.id, "private")
+        db.session.add(category)
+        db.session.commit()
 
+        with pytest.raises(NotFoundError):
+            create_task(
+                test_user.id,
+                {
+                    "title": "Invalid category task",
+                    "category_id": category.id,
+                },
+            )

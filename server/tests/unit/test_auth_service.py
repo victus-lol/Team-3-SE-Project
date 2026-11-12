@@ -1,4 +1,3 @@
-
 import pytest
 
 from app.auth.service import authenticate, create_admin_user
@@ -6,7 +5,6 @@ from app.common.exceptions import AuthenticationError, ConflictError
 
 
 class TestAuthService:
-
     def test_authenticate_valid_credentials(self, db, test_user):
         user = authenticate("testuser@example.com", "password123")
 

@@ -29,4 +29,3 @@ def list_users():
     TC-Admin-01 | Requirement: TMA-SR-001 | Backlog: S2-06
     """
     return jsonify(not_implemented_response("Admin user listing")), 501
-

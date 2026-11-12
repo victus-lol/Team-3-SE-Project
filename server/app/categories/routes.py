@@ -1,23 +1,15 @@
 """
 Category routes.
 Owner: Aadi Kore (PES2UG24CS006)
-Sprint: S2 (S2-01) — scope-pending for create (see DECISIONS_AND_OPEN_QUESTIONS.md item 2)
-Requirement IDs: TMA-F-030, TMA-F-031
-
-Endpoints:
-  GET  /api/categories → list current user's categories
-  POST /api/categories → create a category (scope-pending)
-
-TODO checklist:
-  [ ] Implement list_categories (user's own categories only)
-  [ ] Implement create_category (validate ownership, unique name per user)
-  [ ] Write integration tests in tests/integration/test_categories_api.py
+Sprint: S2 (S2-01)
 """
 
 from flask import Blueprint, jsonify
+from flask_login import current_user
 
-from ..common.responses import not_implemented_response
+from ..common.responses import success_response
 from ..middleware.authorization import login_required_json
+from .service import list_categories as get_categories
 
 categories_bp = Blueprint("categories", __name__)
 
@@ -25,19 +17,20 @@ categories_bp = Blueprint("categories", __name__)
 @categories_bp.route("", methods=["GET"])
 @login_required_json
 def list_categories():
-    """
-    TODO (S2-01 — Aadi): List authenticated user's categories.
-    TC-Org-04 | Requirement: TMA-F-030 | Backlog: S2-01
-    """
-    return jsonify(not_implemented_response("Category listing")), 501
+    categories = get_categories(current_user.id)
+
+    return jsonify(success_response([category.to_dict() for category in categories])), 200
 
 
 @categories_bp.route("", methods=["POST"])
 @login_required_json
 def create_category():
-    """
-    TODO (S2-01 — Aadi): Create category (scope-pending decision).
-    Requirement: TMA-F-031 | Backlog: S2-01
-    """
-    return jsonify(not_implemented_response("Category creation (scope-pending)")), 501
-
+    return jsonify(
+        {
+            "success": False,
+            "error": {
+                "code": "NOT_IMPLEMENTED",
+                "message": "Category creation is pending scope approval.",
+            },
+        }
+    ), 501

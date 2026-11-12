@@ -39,4 +39,3 @@ def get_summary(user_id: int) -> dict:
             counts[status] = count
 
     return counts
-

@@ -268,4 +268,3 @@ class TestForeignKeyEnforcement:
         with pytest.raises(IntegrityError):
             db.session.commit()
         db.session.rollback()
-

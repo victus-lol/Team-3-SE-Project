@@ -1,8 +1,4 @@
-
-
-
 class TestLoginEndpoint:
-
     def test_login_valid_credentials(self, client, test_user):
         response = client.post(
             "/api/auth/login",
@@ -49,7 +45,6 @@ class TestLoginEndpoint:
 
 
 class TestLogoutEndpoint:
-
     def test_logout_clears_session(self, auth_client):
         response = auth_client.post("/api/auth/logout")
 
@@ -65,7 +60,6 @@ class TestLogoutEndpoint:
 
 
 class TestMeEndpoint:
-
     def test_me_returns_current_user(self, auth_client, test_user):
         response = auth_client.get("/api/auth/me")
 
