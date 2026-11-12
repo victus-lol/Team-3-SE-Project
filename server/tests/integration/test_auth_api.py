@@ -1,3 +1,8 @@
+import pytest
+
+from app.common.exceptions import ValidationError
+
+
 class TestLoginEndpoint:
     def test_login_valid_credentials(self, client, test_user):
         response = client.post(
@@ -126,6 +131,96 @@ class TestRegistrationEndpoint:
             json={"name": " ", "email": "not-an-email", "password": "short"},
         )
 
+        assert response.status_code == 400
+
+
+class TestPasswordResetEndpoints:
+    def test_request_response_does_not_disclose_account_existence(self, client, test_user, monkeypatch):
+        from app.auth import password_reset
+
+        sent = []
+        monkeypatch.setattr(password_reset, "send_password_reset_email", lambda email, url: sent.append((email, url)))
+
+        known = client.post("/api/auth/password-reset/request", json={"email": test_user.email})
+        unknown = client.post("/api/auth/password-reset/request", json={"email": "missing@example.com"})
+
+        assert known.status_code == unknown.status_code == 202
+        assert known.get_json() == unknown.get_json()
+        assert sent[0][0] == test_user.email
+        assert "token=" in sent[0][1]
+
+    def test_reset_token_is_single_use_and_revokes_existing_sessions(
+        self, client, test_user, monkeypatch
+    ):
+        from urllib.parse import parse_qs, urlparse
+
+        from app.auth import password_reset
+        from app.models.password_reset_token import PasswordResetToken
+
+        sent = []
+        monkeypatch.setattr(password_reset, "send_password_reset_email", lambda email, url: sent.append(url))
+        assert client.post(
+            "/api/auth/login",
+            json={"email": test_user.email, "password": "password123"},
+        ).status_code == 200
+        with client.session_transaction() as session_data:
+            assert session_data.get("_auth_version") == 0
+        assert client.post(
+            "/api/auth/password-reset/request",
+            json={"email": test_user.email},
+        ).status_code == 202
+        token = parse_qs(urlparse(sent[0]).query)["token"][0]
+        stored_token = PasswordResetToken.query.one()
+        assert stored_token.token_hash != token
+
+        response = client.post(
+            "/api/auth/password-reset/confirm",
+            json={"token": token, "password": "newpassword123"},
+        )
+
+        assert response.status_code == 200
+        assert test_user.session_version == 1
+        with client.session_transaction() as session_data:
+            assert session_data.get("_auth_version") == 0
+        # The session-scoped fixture keeps one Flask app context across requests.
+        # Clear its cached current_user to model a fresh request after reset.
+        from flask import g
+
+        g.pop("_login_user", None)
+        assert client.get("/api/auth/me").status_code == 401
+        assert test_user.check_password("newpassword123")
+        assert client.post(
+            "/api/auth/password-reset/confirm",
+            json={"token": token, "password": "anotherpassword"},
+        ).status_code == 400
+        assert client.post(
+            "/api/auth/login",
+            json={"email": test_user.email, "password": "newpassword123"},
+        ).status_code == 200
+
+    def test_invalid_expired_and_used_tokens_are_rejected(self, app, test_user, db):
+        from app.auth.password_reset import _hash_token, confirm_password_reset
+        from app.models.password_reset_token import PasswordResetToken
+
+        expired = PasswordResetToken(
+            user_id=test_user.id,
+            token_hash=_hash_token("expired"),
+            created_at=100,
+            expires_at=150,
+        )
+        db.session.add(expired)
+        db.session.commit()
+
+        with app.app_context(), pytest.raises(ValidationError):
+            confirm_password_reset("expired", "newpassword123", now=151)
+        with app.app_context(), pytest.raises(ValidationError):
+            confirm_password_reset("unknown", "newpassword123", now=151)
+
+    def test_password_reset_requires_valid_password(self, client):
+        response = client.post(
+            "/api/auth/password-reset/confirm",
+            json={"token": "unknown", "password": "short"},
+        )
         assert response.status_code == 400
 
 

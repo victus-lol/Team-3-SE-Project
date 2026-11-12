@@ -59,6 +59,7 @@ export default function LoginPage() {
             <div className="form-field">
               <label htmlFor="password">Password</label>
               <input id="password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+              <small><Link to="/reset-password">Forgot password?</Link></small>
             </div>
             <button className="btn btn-primary login-submit" type="submit" disabled={submitting}>
               {submitting ? 'Signing in…' : <>Continue to workspace <Icon name="arrow" size={15} /></>}

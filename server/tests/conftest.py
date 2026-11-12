@@ -32,6 +32,7 @@ from app.models.audit_log import AuditLog
 from app.models.category import Category
 from app.models.login_attempt import LoginAttempt
 from app.models.notification import Notification
+from app.models.password_reset_token import PasswordResetToken
 from app.models.task import Task
 from app.models.user import User
 from app.notifications.provider import FakeNotificationProvider
@@ -95,6 +96,7 @@ def clean_db(db, app_context):
     # Delete in FK-safe order
     db.session.execute(Notification.__table__.delete())
     db.session.execute(AuditLog.__table__.delete())
+    db.session.execute(PasswordResetToken.__table__.delete())
     db.session.execute(LoginAttempt.__table__.delete())
     db.session.execute(Task.__table__.delete())
     db.session.execute(Category.__table__.delete())

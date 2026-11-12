@@ -3,6 +3,7 @@ Flask extensions — single instances shared across the application.
 Owner: Akash Pawar (PES2UG24CS041), coordinated with Balaji Gowda S R (PES2UG25CS804)
 """
 
+from flask import session
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -29,4 +30,10 @@ def load_user(user_id: str):
     """Load user from DB for Flask-Login."""
     from .models.user import User
 
-    return User.query.get(int(user_id))
+    user = db.session.get(User, int(user_id))
+    if user is None:
+        return None
+    # Manually-created test sessions represent the initial version (0).
+    if int(session.get("_auth_version", 0)) != user.session_version:
+        return None
+    return user

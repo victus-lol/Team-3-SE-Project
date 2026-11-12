@@ -40,6 +40,14 @@ class BaseConfig:
     LOGIN_MAX_ATTEMPTS: int = int(os.environ.get("LOGIN_MAX_ATTEMPTS", "5"))
     LOGIN_LOCKOUT_SECONDS: int = int(os.environ.get("LOGIN_LOCKOUT_SECONDS", "300"))
     LOGIN_ATTEMPT_WINDOW_SECONDS: int = int(os.environ.get("LOGIN_ATTEMPT_WINDOW_SECONDS", "900"))
+    PASSWORD_RESET_TOKEN_TTL_SECONDS: int = int(os.environ.get("PASSWORD_RESET_TOKEN_TTL_SECONDS", "1800"))
+    MAIL_SERVER: str | None = os.environ.get("MAIL_SERVER")
+    MAIL_PORT: int = int(os.environ.get("MAIL_PORT", "587"))
+    MAIL_USERNAME: str | None = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD: str | None = os.environ.get("MAIL_PASSWORD")
+    MAIL_FROM: str | None = os.environ.get("MAIL_FROM")
+    MAIL_USE_SSL: bool = os.environ.get("MAIL_USE_SSL", "false").lower() == "true"
+    PUBLIC_APP_URL: str = os.environ.get("PUBLIC_APP_URL", "http://localhost:5173")
 
     # ── Database ──────────────────────────────────────────────────────────────
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False

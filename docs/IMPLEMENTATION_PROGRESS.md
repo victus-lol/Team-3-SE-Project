@@ -21,9 +21,10 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - The CI/CD workflow is structured as a GitHub Actions DAG: lint gates backend/frontend checks, those gate browser integration and package creation, and version tags publish the verified web-app bundle plus checksum as a GitHub Release. The project targets one backend runtime, Python 3.12.
 - No hosting provider is configured. GitHub Releases distribute a deployable bundle; live deployment needs a hosting target and credentials.
 - The current `main` includes the notification API and task search/filter APIs; the integration checks in this feature branch exercise those routes without changing backend modules.
-- PR #47 (`codex/project-completion`) completes public standard-user registration, category creation, admin user listing, and activates previously skipped backend/browser workflows. It also adds persistent login throttling, API security headers, request-size limits, and the Alembic migration for throttle state. Local backend suite: 153 passed; frontend: 25 passed with lint/build clean; E2E browser suite passed locally after fixing the notification row selector. GitHub checks are running before merge.
+- PR #47 (merged) completes public standard-user registration, category creation, admin user listing, and activates previously skipped backend/browser workflows. It also adds persistent login throttling, API security headers, request-size limits, and the Alembic migration for throttle state. Backend suite: 153 passed; frontend: 25 passed with lint/build clean; E2E passed locally and on GitHub Actions.
 - PR #48 (merged) adds authenticated profile name updates and paginated task-list metadata while preserving the existing task array in `data`. Pagination validation is capped at 100 items per page and remains user-scoped; backend suite: 159 passed, frontend: 25 passed, and Playwright: 23 passed.
-- PR #49 work (current branch) records administrator user-list and audit-history access in a secret-free, database-backed audit log. The read endpoint is admin-only and paginated; focused admin API checks pass. This covers the only sensitive admin operation currently implemented; no admin mutation endpoints exist yet.
+- PR #49 (merged) records administrator user-list and audit-history access in a secret-free, database-backed audit log. The read endpoint is admin-only and paginated; full backend suite: 163 passed. This covers the only sensitive admin operation currently implemented; no admin mutation endpoints exist yet.
+- PR #50 work (current branch) adds an SMTP-backed password reset request/confirmation flow. Tokens are hashed at rest, single-use, time-limited, and successful reset increments an auth version to revoke existing sessions. The frontend includes request and new-password screens; delivery requires SMTP configuration from `.env.example`. Local checks: backend 167 passed; frontend 27 passed with lint/build clean; Playwright 24 passed; migration upgrade and Ruff passed.
 
 ## Run locally
 
@@ -55,10 +56,11 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat: harden login and API responses | 2026-11-12 | PR #47 added persistent login throttling, configurable security headers/request size, and a migration; verified in the same full CI run. |
 | feat: add profile editing and paginated task lists | 2026-11-12 | Current PR #48 adds self-profile name updates and safe, user-scoped task pagination with metadata while retaining the existing task response array. Local checks: backend 159 passed; frontend 25 passed, lint/build passed; Playwright 23 passed. |
 | feat: add administrator audit trail | 2026-11-12 | Current PR #49 adds a secret-free audit model, migration, admin-only listing endpoint, and records access to user/audit listings. Full backend suite: 163 passed; Ruff clean. |
+| feat: add secure password reset flow | 2026-11-12 | Current PR #50 adds SMTP-configurable reset delivery, hashed single-use/expiring tokens, session revocation, migration, API and UI flows, and recovery tests. Local verification: backend 167 passed; frontend 27 passed, lint/build clean; Playwright 24 passed; Ruff and migration upgrade passed. SMTP credentials are intentionally not supplied. |
 
 ## Remaining integration work
 
-1. Complete and merge the profile/pagination, audit logging, and password-reset batches after their checks pass.
+1. Complete and merge the password-reset batch after its checks pass.
 2. Replace the placeholder load test with an executable benchmark and record a reproducible local result.
 3. Refresh the traceability/API/test evidence documents against the current code and final CI runs.
 4. Extend the CI DAG with clear stage summaries and quality/performance gates; do not claim a deployment because no hosting target is configured.

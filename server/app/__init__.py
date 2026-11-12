@@ -72,7 +72,14 @@ def _init_extensions(app: Flask) -> None:
 
     # Import models so Alembic / migrate sees them
     with app.app_context():
-        from .models import audit_log, category, notification, task, user  # noqa: F401
+        from .models import (  # noqa: F401
+            audit_log,
+            category,
+            notification,
+            password_reset_token,
+            task,
+            user,
+        )
 
 
 def _configure_sqlite(app: Flask) -> None:
