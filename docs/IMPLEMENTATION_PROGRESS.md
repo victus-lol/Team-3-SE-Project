@@ -12,7 +12,8 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - The notifications screen and its component test are now in place.
 - The frontend task list now sends keyword, status, priority, and overdue filters to the task API. Component tests cover request parameters, clearing filters, and retry behavior.
 - Dashboard, notification, and task-detail screens now report API failures as recoverable states; dashboard and notification failures can be retried without stale “awaiting implementation” messaging.
-- This delivery is being recorded in small commits. Browser integration and accessibility results will be added to this handoff as those verification batches are completed.
+- Dialogs now trap keyboard focus, support Escape, and restore focus on close. The app shell adds a skip link, and text contrast was adjusted after accessibility scans found issues.
+- Live browser checks cover sign-in, task CRUD, keyword/status/priority/overdue filtering, dashboard data, notification read-state, keyboard navigation, mobile widths, and Axe accessibility scans at mobile, tablet, and desktop sizes.
 - The frontend feature changes do not modify backend modules. Remaining project work is tracked by its assigned owners.
 - Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
 - The original review-branch dependency findings and migration lint issue were resolved in the merged CI/CD work; the current CI workflows run Ruff, pytest, frontend lint/tests/build, placeholder inventory, pip-audit, and npm audit.
@@ -41,8 +42,9 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | docs: record CI findings for integration | 2026-11-01 | Recorded that frontend and placeholder CI pass, while existing backend lint and dependency audit findings need backend-owner follow-up. |
 | feat(notifications): implement S2-07 service, API, and deterministic scheduler | 2026-11-02 | Implemented user-scoped notification service/routes, UTC-aware dispatch with injectable provider, manually-driven scheduler, unit/API test cases, and detailed TC-Notify-01 documentation. Run backend tests and PR CI before merge. |
 | fix: improve feature API recovery and empty states | 2026-11-12 | Added clear error/retry messaging for dashboard and notifications, removed stale endpoint placeholders, and covered fallback/retry behavior in component tests. |
+| feat: complete frontend accessibility and integration checks | 2026-11-12 | Added dialog focus handling, skip navigation, contrast fixes, task-card coverage, live Playwright/Axe workflows, and updated the test/handoff guide. Local checks: backend 137 passed/5 skipped; frontend 22 passed, lint/build pass; E2E 13 passed/10 skipped. |
 
 ## Remaining integration work
 
-1. Finish live-browser integration, responsive, and accessibility checks for the frontend changes before the final handoff.
-2. Other team members own the remaining backend rules and broader project validation noted in `docs/TEST_PLAN.md`.
+1. The assigned frontend implementation and integration checks are complete on this feature branch. Open a PR for team review before merging.
+2. Other team members own remaining skipped admin/reminder/sorting E2E cases and broader performance, persistence, and security validation noted in `docs/TEST_PLAN.md`.

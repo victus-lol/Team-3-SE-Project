@@ -17,6 +17,7 @@ sys.path.insert(0, str(SERVER_DIR))
 from app import create_app
 from app.config import TestingConfig, config_map
 from app.extensions import db
+from app.models.notification import Notification
 from app.models.user import User
 
 
@@ -67,6 +68,18 @@ def initialize_database() -> None:
             password="adminpassword123",
             role="admin",
         )
+        e2e_user = User.query.filter_by(email="e2e.user@example.com").first()
+        if not Notification.query.filter_by(
+            user_id=e2e_user.id,
+            message="E2E reminder for notification workflow",
+        ).first():
+            db.session.add(
+                Notification(
+                    user_id=e2e_user.id,
+                    message="E2E reminder for notification workflow",
+                    status="pending",
+                )
+            )
         db.session.commit()
 
     print("E2E database initialized with isolated test user accounts.")

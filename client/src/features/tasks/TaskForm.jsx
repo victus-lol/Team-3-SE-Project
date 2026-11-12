@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import taskApi from './taskApi.js'
 import Icon from '../../components/Icon.jsx'
+import useDialogAccessibility from '../../hooks/useDialogAccessibility.js'
 
 export default function TaskForm({ isOpen, onClose, onSuccess, initialData = null }) {
   const [title, setTitle] = useState(initialData?.title || '')
@@ -10,6 +11,8 @@ export default function TaskForm({ isOpen, onClose, onSuccess, initialData = nul
   const [dueDate, setDueDate] = useState(initialData?.due_date || '')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const dialogRef = useRef(null)
+  useDialogAccessibility(dialogRef, isOpen, submitting ? undefined : onClose)
 
   if (!isOpen) return null
 
@@ -38,7 +41,7 @@ export default function TaskForm({ isOpen, onClose, onSuccess, initialData = nul
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !submitting) onClose() }}>
-      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="task-form-title">
+      <section ref={dialogRef} className="modal-card" role="dialog" aria-modal="true" aria-labelledby="task-form-title" tabIndex="-1">
         <div className="modal-header">
           <div>
             <p className="eyebrow">Task details</p>
@@ -52,7 +55,7 @@ export default function TaskForm({ isOpen, onClose, onSuccess, initialData = nul
           <div className="form-grid">
             <div className="form-field">
               <label htmlFor="task-title">Task title <span aria-hidden="true">*</span></label>
-              <input id="task-title" name="title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} required autoFocus />
+              <input id="task-title" name="title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} required data-dialog-autofocus />
             </div>
             <div className="form-field">
               <label htmlFor="task-description">Description</label>
