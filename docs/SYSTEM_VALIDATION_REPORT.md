@@ -1,90 +1,37 @@
 # System Validation Report
 
-**Project:** Task Manager Application  
-**Sprint:** Sprint 2 — testing snapshot  
-**Execution date:** 2 November 2026  
-**Local environment:** Windows, Python 3.11.9, Flask test client, pytest 8.3.4, Playwright  
-**Branch:** `feature/s2-09-e2e-workflow`  
-**Status:** Updated partial validation report — not final system sign-off.
+**Project:** Team 3 Task Manager
+**Validation date:** 12 November 2026
+**Scope:** Current Flask API and React/Vite website; local measurements plus merged GitHub Actions runs for PRs #47–#50.
 
-## 1. Objective
+## Results
 
-Record the backend unit/integration and browser-based E2E validation executed for the current Sprint 2 implementation. Identify scenarios that remain skipped or blocked by incomplete feature APIs.
+| Area | Observed result |
+|---|---|
+| Backend pytest | 167 passed, 0 skipped, 0 failed |
+| Backend Ruff | Pass |
+| Frontend Vitest | 27 passed |
+| ESLint / production build | Pass / Pass |
+| Playwright Chromium | 24 passed, 0 skipped |
+| Dependency audits and placeholder gate | Pass in Actions |
+| Packaging | Versioned ZIP and SHA-256 checksum generated in Actions |
+| Database migration | Upgrade passed through current password-reset revision |
+| Persistence | File-backed record remained readable after closing and reopening a database session |
+| Performance | 20 VUs / 30 s; 3,786 requests, 0 errors, p90 172.89 ms locally |
+| Python line / branch coverage | 84.69% / 64.09% locally |
 
-## 2. Backend execution
+## Acceptance summary
 
-Command:
+The live task, search/filter/sort, dashboard, notification, admin, registration, account recovery request, and security regression paths pass their automated checks. Task pagination preserves the existing list response and returns user-scoped metadata. Admin audit records exclude passwords, tokens, request bodies, and other credentials.
 
-```powershell
-python -m pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=json:coverage.json --junitxml=junit.xml
-```
+## Limitations
 
-## 3. Backend integration test results
+- Password reset email transport is covered with a test stub. Real delivery needs SMTP configuration and a correct `PUBLIC_APP_URL`.
+- The notification scheduler is manually driven; a production worker and provider have not been configured.
+- Performance was measured on a local Windows development server and SQLite. It is not a production capacity guarantee.
+- GitHub Actions creates a release artifact; no live hosting target or deploy credentials are configured.
+- CI's seven-stage per-job summaries and coverage/performance gates are under active implementation in a separate PR.
 
-| Integration test file | Passed | Skipped | Validation area |
-|---|---:|---:|---|
-| `test_admin_api.py` | 2 | 2 | Admin access |
-| `test_auth_api.py` | 8 | 0 | Login/session |
-| `test_categories_api.py` | 1 | 2 | Category API |
-| `test_health_api.py` | 11 | 0 | Health, readiness and database checks |
-| `test_notifications_api.py` | 4 | 0 | Notification API and ownership |
-| `test_persistence.py` | 0 | 1 | Persistence |
-| `test_search_api.py` | 0 | 4 | Search and sorting |
-| `test_security_api.py` | 2 | 3 | Authentication/access and error responses |
-| `test_summary_api.py` | 1 | 2 | Dashboard summary |
-| `test_tasks_api.py` | 3 | 5 | Task API |
-| **Total** | **32** | **19** | |
+## Current conclusion
 
-## 4. Backend unit and integration totals
-
-| Test group | Passed | Skipped | Total |
-|---|---:|---:|---:|
-| Unit tests | 49 | 25 | 74 |
-| Integration/API tests | 32 | 19 | 51 |
-| **Backend total** | **81** | **44** | **125** |
-
-**Failed:** 0
-
-The authentication service unit tests (5) and authentication API tests (8) are now active and passing. The notification service unit tests (15) and notification integration tests (4) also pass.
-
-## 5. Playwright E2E validation
-
-The Playwright suite was run locally from the `tests` directory and passed in GitHub Actions.
-
-| Browser test area | Passed | Skipped |
-|---|---:|---:|
-| Valid user login and logout | 1 | 0 |
-| Invalid credentials rejection | 1 | 0 |
-| Logged-out protected-route redirect | 1 | 0 |
-| Platform smoke and anonymous-access checks | 5 | 0 |
-| Admin user journeys | 0 | 2 |
-| Notification journeys | 0 | 2 |
-| Search/filter/sort journeys | 0 | 3 |
-| Task CRUD journeys | 0 | 3 |
-| **Total** | **8** | **10** |
-
-**E2E failures:** 0
-
-The E2E server uses a disposable SQLite database and seeded test-only accounts. It does not use the developer's normal database.
-
-## 6. Coverage snapshot
-
-| Metric | Result |
-|---|---:|
-| Backend statement coverage | 87.93% (approximately 88%) |
-| Backend branch coverage | 71.74% (66 of 92 paths) |
-
-The branch measurement is from the local Windows/Python 3.11.9 run. GitHub Actions backend tests also passed on Linux/Python 3.12, with 81 passed, 44 skipped and 88% line coverage. The workflow currently reports line coverage without enabling branch measurement.
-
-## 7. Observations and outstanding validation
-
-- Authentication endpoints now support login, logout and current-user retrieval; their backend and browser tests pass.
-- Notification API ownership and read-state cases pass.
-- The authenticated browser test logs show `GET /api/dashboard/summary` and `GET /api/tasks` returning HTTP 501. These endpoints remain unfinished, so a successful login does not mean the dashboard/task workflows are complete.
-- Task CRUD, search/filter, persistence and several admin/category/dashboard cases remain skipped or incomplete.
-- The browser tests for notification interactions, search, task CRUD and admin user journeys remain skipped. They must not be described as passing.
-- Nine SQLAlchemy LegacyAPIWarning warnings appeared in the local backend test run. They did not fail the tests.
-
-## 8. Conclusion
-
-The current backend snapshot has **81 passed, 44 skipped and 0 failed**. The E2E suite has **8 passed, 10 skipped and 0 failed**. Authentication, platform smoke/security checks and notification API tests are passing. Full system validation remains **in progress** until incomplete feature endpoints and pending scenarios are implemented, tested and reviewed. No final acceptance claim is made by this preliminary report.
+The tested application flows and core quality checks are implemented. Final repository closure still depends on merging the current documentation/performance PR and the separate seven-stage CI reporting PR after their GitHub Actions runs pass. See `docs/TEST_PLAN.md` and `docs/REQUIREMENT_TRACEABILITY.md` for test-to-requirement mapping.
