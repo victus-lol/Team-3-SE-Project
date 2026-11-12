@@ -18,7 +18,7 @@ from ..tasks.rules import (
 )
 
 
-def search_tasks(user_id: int, params: dict | None = None) -> list:
+def search_tasks_query(user_id: int, params: dict | None = None):
     params = params or {}
 
     query = Task.query.filter(Task.owner_id == user_id)
@@ -108,4 +108,9 @@ def search_tasks(user_id: int, params: dict | None = None) -> list:
         asc(Task.id),
     )
 
-    return query.all()
+    return query
+
+
+def search_tasks(user_id: int, params: dict | None = None) -> list:
+    """Return matching tasks while retaining the existing service contract."""
+    return search_tasks_query(user_id, params).all()
