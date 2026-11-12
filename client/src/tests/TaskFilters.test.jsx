@@ -28,4 +28,15 @@ describe('TaskFilters', () => {
 
     expect(screen.getByText('{"status":"","priority":"high","overdue":true}')).toBeInTheDocument()
   })
+
+  it('clears all active filters', async () => {
+    const user = userEvent.setup()
+    render(<FilterHarness />)
+
+    await user.selectOptions(screen.getByLabelText(/filter by status/i), 'completed')
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+    expect(screen.getByText('{"status":"","priority":"","overdue":false}')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Clear filters' })).toBeDisabled()
+  })
 })

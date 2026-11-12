@@ -34,7 +34,7 @@ export default function TaskDetails() {
     <>
       <p className="eyebrow">Workspace / Tasks / Details</p>
       <p style={{ marginBottom: 18 }}><Link className="text-link" to="/tasks"><Icon name="arrow" size={13} style={{ transform: 'rotate(180deg)', verticalAlign: 'middle' }} /> Back to tasks</Link></p>
-      {error ? <div className="notice" role="status">{error} The task API in this local project is still awaiting implementation.</div> : task && (
+      {error ? <div className="notice" role="alert">{error}</div> : task && (
         <article className="card task-detail-card">
           <div className="page-heading" style={{ marginBottom: 12 }}>
             <div><h1 className="page-title">{task.title}</h1><p className="page-subtitle">Task #{task.id}</p></div>

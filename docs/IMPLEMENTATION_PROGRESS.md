@@ -10,10 +10,14 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - A responsive application shell, protected routes, and polished login/auth UI are now in place.
 - Task list/details/forms, search and filters, and dashboard views are updated with component coverage.
 - The notifications screen and its component test are now in place.
-- Full API integration remains; the frontend feature changes do not modify backend modules.
+- The frontend task list now sends keyword, status, priority, and overdue filters to the task API. Component tests cover request parameters, clearing filters, and retry behavior.
+- Dashboard, notification, and task-detail screens now report API failures as recoverable states; dashboard and notification failures can be retried without stale “awaiting implementation” messaging.
+- Dialogs now trap keyboard focus, support Escape, and restore focus on close. The app shell adds a skip link, and text contrast was adjusted after accessibility scans found issues.
+- Live browser checks cover sign-in, task CRUD, keyword/status/priority/overdue filtering, dashboard data, notification read-state, keyboard navigation, mobile widths, and Axe accessibility scans at mobile, tablet, and desktop sizes.
+- The frontend feature changes do not modify backend modules. Remaining project work is tracked by its assigned owners.
 - Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
 - The original review-branch dependency findings and migration lint issue were resolved in the merged CI/CD work; the current CI workflows run Ruff, pytest, frontend lint/tests/build, placeholder inventory, pip-audit, and npm audit.
-- Sprint 2 notification backend work is being implemented on `feature/s2-07-notifications`; validate it with local pytest and the pull-request CI run before treating it as complete.
+- The current `main` includes the notification API and task search/filter APIs; the integration checks in this feature branch exercise those routes without changing backend modules.
 
 ## Run locally
 
@@ -37,8 +41,10 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat: complete notifications interface | 2026-11-01 | Added the notifications screen behavior and its component test; it depends on the backend notifications endpoints. |
 | docs: record CI findings for integration | 2026-11-01 | Recorded that frontend and placeholder CI pass, while existing backend lint and dependency audit findings need backend-owner follow-up. |
 | feat(notifications): implement S2-07 service, API, and deterministic scheduler | 2026-11-02 | Implemented user-scoped notification service/routes, UTC-aware dispatch with injectable provider, manually-driven scheduler, unit/API test cases, and detailed TC-Notify-01 documentation. Run backend tests and PR CI before merge. |
+| fix: improve feature API recovery and empty states | 2026-11-12 | Added clear error/retry messaging for dashboard and notifications, removed stale endpoint placeholders, and covered fallback/retry behavior in component tests. |
+| feat: complete frontend accessibility and integration checks | 2026-11-12 | Added dialog focus handling, skip navigation, contrast fixes, task-card coverage, live Playwright/Axe workflows, and updated the test/handoff guide. Local checks: backend 137 passed/5 skipped; frontend 22 passed, lint/build pass; E2E 13 passed/10 skipped. |
 
 ## Remaining integration work
 
-1. Validate login, tasks, dashboard, and notifications against the Flask API as endpoints become available; finish responsive and accessibility review before merge.
-2. Run the expanded notification unit and integration tests on the feature branch and address any CI failures before merging.
+1. The assigned frontend implementation and integration checks are complete on this feature branch. Open a PR for team review before merging.
+2. Other team members own remaining skipped admin/reminder/sorting E2E cases and broader performance, persistence, and security validation noted in `docs/TEST_PLAN.md`.

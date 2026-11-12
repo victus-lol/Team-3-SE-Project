@@ -35,5 +35,19 @@ describe('NotificationPanel', () => {
     render(<NotificationPanel />)
 
     expect(await screen.findByText(/Notification listing is not implemented/)).toBeInTheDocument()
+    expect(screen.queryByText(/API in this local project is still awaiting implementation/i)).not.toBeInTheDocument()
+  })
+
+  it('retries notification loading after an API error', async () => {
+    const user = userEvent.setup()
+    mocks.get
+      .mockResolvedValueOnce({ ok: false, data: { error: { message: 'Temporary service error.' } } })
+      .mockResolvedValueOnce({ ok: true, data: { success: true, data: [] } })
+    render(<NotificationPanel />)
+
+    await screen.findByRole('alert')
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByText('You’re all caught up')).toBeInTheDocument()
+    expect(mocks.get).toHaveBeenCalledTimes(2)
   })
 })

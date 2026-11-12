@@ -61,8 +61,8 @@ export default function NotificationPanel() {
       </div>
 
       {error ? (
-        <div className="notice" role="status">
-          {error} The notification API in this local project is still awaiting implementation.
+        <div className="notice" role="alert">
+          {error} <button className="text-link" type="button" onClick={loadNotifications}>Try again</button>
         </div>
       ) : notifications.length === 0 ? (
         <div className="card empty-state"><Icon name="bell" size={23} /><strong>You’re all caught up</strong><p>New reminders and updates will appear here.</p></div>
