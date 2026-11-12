@@ -29,6 +29,7 @@ import pytest
 from app import create_app
 from app.extensions import db as _db
 from app.models.category import Category
+from app.models.login_attempt import LoginAttempt
 from app.models.notification import Notification
 from app.models.task import Task
 from app.models.user import User
@@ -92,6 +93,7 @@ def clean_db(db, app_context):
     db.session.remove()
     # Delete in FK-safe order
     db.session.execute(Notification.__table__.delete())
+    db.session.execute(LoginAttempt.__table__.delete())
     db.session.execute(Task.__table__.delete())
     db.session.execute(Category.__table__.delete())
     db.session.execute(User.__table__.delete())

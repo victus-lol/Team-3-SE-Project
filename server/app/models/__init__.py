@@ -4,8 +4,9 @@ Every model must be imported in this file before migrations are generated.
 """
 
 from .category import Category
+from .login_attempt import LoginAttempt
 from .notification import Notification
 from .task import Task
 from .user import User
 
-__all__ = ["User", "Task", "Category", "Notification"]
+__all__ = ["User", "Task", "Category", "Notification", "LoginAttempt"]

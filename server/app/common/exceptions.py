@@ -54,3 +54,8 @@ class ConflictError(AppError):
 
     def __init__(self, message: str = "Resource already exists."):
         super().__init__(message)
+
+
+class RateLimitError(AppError):
+    status_code = 429
+    code = "RATE_LIMITED"

@@ -4,6 +4,7 @@ Owner: Balaji Gowda S R (PES2UG25CS804), coordinated with Akash Pawar (PES2UG24C
 """
 
 from flask import Flask, jsonify
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..common.exceptions import AppError
 from ..common.responses import error_response
@@ -40,6 +41,10 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(422)
     def unprocessable(exc):
         return jsonify(error_response("VALIDATION_ERROR", "Unprocessable entity.")), 422
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def request_too_large(exc):
+        return jsonify(error_response("REQUEST_TOO_LARGE", "Request body exceeds the configured size limit.")), 413
 
     @app.errorhandler(429)
     def too_many_requests(exc):

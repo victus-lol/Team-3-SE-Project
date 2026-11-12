@@ -7,7 +7,7 @@ Balaji Gowda S R (PES2UG25CS804) - auth, admin, dashboard blueprints
 import logging
 import os
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 from .common.responses import error_response, success_response
 from .config import config_map
@@ -51,6 +51,7 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # ── Error handlers ───────────────────────────────────────────────────────
     _register_error_handlers(app)
+    _register_security_headers(app)
 
     # ── CLI commands ─────────────────────────────────────────────────────────
     _register_cli(app)
@@ -140,6 +141,25 @@ def _register_error_handlers(app: Flask) -> None:
     from .middleware.error_handler import register_error_handlers
 
     register_error_handlers(app)
+
+
+def _register_security_headers(app: Flask) -> None:
+    """Apply safe response headers to the JSON API and sensitive responses."""
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        if request.path.startswith("/api/"):
+            response.headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+            )
+        if request.is_secure:
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        return response
 
 
 def _register_cli(app: Flask) -> None:
