@@ -22,7 +22,15 @@ function renderTaskList() {
 
 describe('TaskList', () => {
   beforeEach(() => {
-    mocks.getTasks.mockReset().mockResolvedValue({ ok: true, data: { success: true, data: sampleTasks } })
+    mocks.getTasks.mockReset().mockImplementation((criteria = {}) => {
+      const normalizedQuery = criteria.q?.toLowerCase() || ''
+      const data = sampleTasks.filter((task) => (
+        (!normalizedQuery || `${task.title} ${task.description}`.toLowerCase().includes(normalizedQuery))
+        && (!criteria.status || task.status === criteria.status)
+        && (!criteria.priority || task.priority === criteria.priority)
+      ))
+      return Promise.resolve({ ok: true, data: { success: true, data } })
+    })
     mocks.deleteTask.mockReset()
   })
 
@@ -36,8 +44,24 @@ describe('TaskList', () => {
     await user.type(search, 'slides')
     await user.keyboard('{Enter}')
 
+    await waitFor(() => expect(mocks.getTasks).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'slides' })))
     expect(screen.getByText('Prepare slides')).toBeInTheDocument()
     expect(screen.queryByText('Read chapter')).not.toBeInTheDocument()
+  })
+
+  it('sends selected filters to the API and can clear them', async () => {
+    const user = userEvent.setup()
+    renderTaskList()
+
+    expect(await screen.findByText('Prepare slides')).toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Filter by priority'), 'high')
+    await waitFor(() => expect(mocks.getTasks).toHaveBeenLastCalledWith(expect.objectContaining({ priority: 'high' })))
+    expect(screen.getByText('Prepare slides')).toBeInTheDocument()
+    expect(screen.queryByText('Read chapter')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+    await waitFor(() => expect(mocks.getTasks).toHaveBeenLastCalledWith(expect.objectContaining({ priority: '' })))
+    expect(await screen.findByText('Read chapter')).toBeInTheDocument()
   })
 
   it('asks for confirmation and deletes the selected task', async () => {
@@ -52,5 +76,15 @@ describe('TaskList', () => {
 
     await waitFor(() => expect(mocks.deleteTask).toHaveBeenCalledWith(1))
     await waitFor(() => expect(screen.queryByText('Prepare slides')).not.toBeInTheDocument())
+  })
+
+  it('offers a retry when task loading fails', async () => {
+    const user = userEvent.setup()
+    mocks.getTasks.mockResolvedValueOnce({ ok: false, data: { error: { message: 'Task service unavailable.' } } })
+    renderTaskList()
+
+    expect(await screen.findByText('Tasks could not be loaded')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByText('Prepare slides')).toBeInTheDocument()
   })
 })

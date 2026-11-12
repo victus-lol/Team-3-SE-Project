@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import taskApi from './taskApi.js'
 import TaskCard from './TaskCard.jsx'
 import TaskForm from './TaskForm.jsx'
@@ -18,41 +18,41 @@ export default function TaskList() {
   const [deleteError, setDeleteError] = useState('')
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState({ status: '', priority: '', overdue: false })
+  const requestVersionRef = useRef(0)
+  const criteria = useMemo(() => ({
+    q: query.trim(),
+    status: filters.status,
+    priority: filters.priority,
+    overdue: filters.overdue ? 'true' : '',
+  }), [query, filters])
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (criteria = {}) => {
+    const requestId = ++requestVersionRef.current
     setLoading(true)
     setError('')
     try {
-      const res = await taskApi.getTasks()
+      const res = await taskApi.getTasks(criteria)
+      if (requestId !== requestVersionRef.current) return
       if (res.ok && res.data?.success && Array.isArray(res.data.data)) {
         setTasks(res.data.data)
       } else {
         setTasks(null)
-        setError(res.data?.error?.message || 'Task service is not available yet.')
+        setError(res.data?.error?.message || 'The task list could not be loaded.')
       }
     } catch (err) {
+      if (requestId !== requestVersionRef.current) return
       setTasks(null)
       setError(err.message || 'Could not reach the task service.')
     } finally {
-      setLoading(false)
+      if (requestId === requestVersionRef.current) setLoading(false)
     }
   }, [])
 
-  useEffect(() => { fetchTasks() }, [fetchTasks])
+  useEffect(() => {
+    fetchTasks(criteria)
+  }, [fetchTasks, criteria])
 
-  const visibleTasks = useMemo(() => {
-    if (!tasks) return []
-    const currentDate = new Date()
-    const today = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
-    return tasks.filter((task) => {
-      const normalizedQuery = query.trim().toLowerCase()
-      const matchesQuery = !normalizedQuery || `${task.title || ''} ${task.description || ''}`.toLowerCase().includes(normalizedQuery)
-      const matchesStatus = !filters.status || task.status === filters.status
-      const matchesPriority = !filters.priority || task.priority === filters.priority
-      const overdue = task.due_date && task.due_date < today && task.status !== 'completed'
-      return matchesQuery && matchesStatus && matchesPriority && (!filters.overdue || overdue)
-    })
-  }, [tasks, query, filters])
+  const visibleTasks = tasks || []
 
   const handleDelete = async () => {
     if (!deleteTask) return
@@ -91,23 +91,23 @@ export default function TaskList() {
       </div>
 
       <div className="section-heading" style={{ marginTop: 18 }}>
-        <div><h2>{loading ? 'Loading tasks' : tasks ? `${visibleTasks.length} ${visibleTasks.length === 1 ? 'task' : 'tasks'}` : 'Task list'}</h2><p>Sorted by your current filters</p></div>
+        <div><h2>{loading ? 'Loading tasks' : tasks ? `${visibleTasks.length} ${visibleTasks.length === 1 ? 'task' : 'tasks'}` : 'Task list'}</h2><p>Results for your search and filters</p></div>
         {tasks && <span className="eyebrow" style={{ margin: 0 }}>{tasks.filter((task) => task.status !== 'completed').length} open</span>}
       </div>
 
-      {error && <div className="notice" role="status">{error} The task API in this local project is still awaiting implementation.</div>}
+      {error && <div className="notice" role="alert">{error} <button className="text-link" type="button" onClick={() => fetchTasks(criteria)}>Try again</button></div>}
       {deleteError && <div className="error-message" role="alert">{deleteError}</div>}
       {loading ? <Loading message="Loading your tasks..." /> : tasks === null ? (
-        <div className="card empty-state"><Icon name="list" size={23} /><strong>Your task list will appear here</strong><p>Once the task service is connected, you can create and manage work from this page.</p></div>
+        <div className="card empty-state"><Icon name="list" size={23} /><strong>Tasks could not be loaded</strong><p>Check your connection and use the retry control above.</p></div>
       ) : visibleTasks.length ? (
         <div className="task-list">
           {visibleTasks.map((task) => <TaskCard key={task.id} task={task} onEdit={openEdit} onDelete={() => setDeleteTask(task)} />)}
         </div>
       ) : (
-        <div className="card empty-state"><Icon name="search" size={22} /><strong>{tasks.length ? 'No tasks match those filters' : 'A clear slate'}</strong><p>{tasks.length ? 'Try a different search or reset one of the filters.' : 'Create your first task when you’re ready to get started.'}</p>{!tasks.length && <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={openCreate}><Icon name="plus" size={15} /> Create task</button>}</div>
+        <div className="card empty-state"><Icon name="search" size={22} /><strong>{query || filters.status || filters.priority || filters.overdue ? 'No tasks match those filters' : 'A clear slate'}</strong><p>{query || filters.status || filters.priority || filters.overdue ? 'Try a different search or reset one of the filters.' : 'Create your first task when you’re ready to get started.'}</p>{!(query || filters.status || filters.priority || filters.overdue) && <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={openCreate}><Icon name="plus" size={15} /> Create task</button>}</div>
       )}
 
-      {isFormOpen && <TaskForm key={activeTask?.id || 'new'} isOpen={isFormOpen} initialData={activeTask} onClose={closeForm} onSuccess={() => { closeForm(); fetchTasks() }} />}
+      {isFormOpen && <TaskForm key={activeTask?.id || 'new'} isOpen={isFormOpen} initialData={activeTask} onClose={closeForm} onSuccess={() => { closeForm(); fetchTasks(criteria) }} />}
 
       <ConfirmDialog
         isOpen={Boolean(deleteTask)}

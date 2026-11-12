@@ -10,10 +10,12 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - A responsive application shell, protected routes, and polished login/auth UI are now in place.
 - Task list/details/forms, search and filters, and dashboard views are updated with component coverage.
 - The notifications screen and its component test are now in place.
-- Full API integration remains; the frontend feature changes do not modify backend modules.
+- The frontend task list now sends keyword, status, priority, and overdue filters to the task API. Component tests cover request parameters, clearing filters, and retry behavior.
+- This delivery is being recorded in small commits. Browser integration and accessibility results will be added to this handoff as those verification batches are completed.
+- The frontend feature changes do not modify backend modules. Remaining project work is tracked by its assigned owners.
 - Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
 - The original review-branch dependency findings and migration lint issue were resolved in the merged CI/CD work; the current CI workflows run Ruff, pytest, frontend lint/tests/build, placeholder inventory, pip-audit, and npm audit.
-- Sprint 2 notification backend work is being implemented on `feature/s2-07-notifications`; validate it with local pytest and the pull-request CI run before treating it as complete.
+- The current `main` includes the notification API and task search/filter APIs; the integration checks in this feature branch exercise those routes without changing backend modules.
 
 ## Run locally
 
@@ -40,5 +42,5 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 
 ## Remaining integration work
 
-1. Validate login, tasks, dashboard, and notifications against the Flask API as endpoints become available; finish responsive and accessibility review before merge.
-2. Run the expanded notification unit and integration tests on the feature branch and address any CI failures before merging.
+1. Finish live-browser integration, responsive, and accessibility checks for the frontend changes before the final handoff.
+2. Other team members own the remaining backend rules and broader project validation noted in `docs/TEST_PLAN.md`.
