@@ -2,8 +2,8 @@ name: Task Manager CI/CD
 
 on:
   push:
-    branches: [main, 'feature/**', 'fix/**', 'test/**']
-    tags: ['v*']
+    branches: [main, "feature/**", "fix/**", "test/**", "codex/**"]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -15,52 +15,76 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  backend-lint:
-    name: backend-lint
+  quality:
+    name: 1. Lint & Code Quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: server/requirements-dev.txt
-
-      - name: Install backend quality tools
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - name: Install Python quality tools
         run: python -m pip install -r server/requirements-dev.txt
-
+      - name: Install frontend dependencies
+        working-directory: client
+        run: npm ci
       - name: Run Ruff
-        run: ruff check server/
+        run: |
+          ruff check server/
+          ruff check --config server/ruff.toml scripts/check_coverage.py scripts/check_performance_report.py tests/performance/tasks_load.py
+      - name: Run ESLint
+        working-directory: client
+        run: npm run lint
+      - name: Check pending test inventory
+        run: python scripts/check_test_placeholders.py --fail-on-pending
+      - name: Validate OpenAPI YAML formatting and syntax
+        working-directory: client
+        run: npx prettier --check ../docs/openapi.yaml ../.github/workflows/ci.yml
+      - name: Write quality summary
+        if: always()
+        run: |
+          {
+            echo '## 🔍 Stage 1: Code Quality & Static Analysis'
+            echo
+            echo '| Check | Status | Verification detail |'
+            echo '|---|---|---|'
+            echo '| Python lint | ${{ job.status }} | Ruff checks backend and new QA scripts. |'
+            echo '| JavaScript lint | ${{ job.status }} | ESLint runs with zero warnings allowed. |'
+            echo '| Pending-test inventory | ${{ job.status }} | No pending placeholders allowed by the gate. |'
+            echo '| API contract syntax | ${{ job.status }} | Prettier parses and validates the OpenAPI YAML. |'
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  backend-tests:
-    name: backend-tests
-    needs: backend-lint
+  backend:
+    name: 2. Backend API & Regression Tests
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: server/requirements-dev.txt
-
       - name: Install backend dependencies
         run: python -m pip install -r server/requirements-dev.txt
-
-      - name: Run Pytest with coverage
+      - name: Run backend suite with line and branch coverage
         working-directory: server
         run: >-
           python -m pytest
           --cov=app
+          --cov-branch
           --cov-report=term-missing
+          --cov-report=json:coverage.json
           --cov-report=xml:coverage.xml
           --junitxml=junit.xml
-
-      - name: Upload backend test reports
+      - name: Upload backend test and coverage reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -70,37 +94,61 @@ jobs:
             server/coverage.xml
           if-no-files-found: warn
           retention-days: 30
+      - name: Upload coverage gate input
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: backend-coverage-json
+          path: server/coverage.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Write backend summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          if not os.path.exists('server/junit.xml'):
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+                  summary.write(f'## 🧪 Stage 2: Backend API & Regression Tests\n\nBackend job status: {os.environ["JOB_STATUS"]}; test report was not created.\n')
+              raise SystemExit(0)
+          root = ET.parse('server/junit.xml').getroot()
+          suites = list(root) if root.tag == 'testsuites' else [root]
+          tests = sum(int(suite.attrib.get('tests', 0)) for suite in suites)
+          failures = sum(int(suite.attrib.get('failures', 0)) for suite in suites)
+          errors = sum(int(suite.attrib.get('errors', 0)) for suite in suites)
+          skipped = sum(int(suite.attrib.get('skipped', 0)) for suite in suites)
+          passed = tests - failures - errors - skipped
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('## 🧪 Stage 2: Backend API & Regression Tests\n\n')
+              summary.write('| Check | Result |\n|---|---:|\n')
+              summary.write(f'| Pytest cases | {tests} |\n| Passed | {passed} |\n| Skipped | {skipped} |\n| Failed/errors | {failures + errors} |\n')
+              summary.write(f'| Job status | {os.environ["JOB_STATUS"]} |\n\nJUnit and coverage reports are attached as workflow artifacts.\n')
+          PY
 
   frontend:
-    name: frontend
-    needs: backend-lint
+    name: 3. Frontend & UX Verification
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: client/package-lock.json
-
       - name: Install frontend dependencies
         working-directory: client
         run: npm ci
-
-      - name: Run ESLint
-        working-directory: client
-        run: npm run lint
-
       - name: Run Vitest
         working-directory: client
         run: npm test
-
       - name: Build production frontend
         working-directory: client
         run: npm run build
-
       - name: Upload production frontend bundle
         uses: actions/upload-artifact@v4
         with:
@@ -108,126 +156,179 @@ jobs:
           path: client/dist/
           if-no-files-found: error
           retention-days: 30
+      - name: Write frontend summary
+        if: always()
+        run: |
+          {
+            echo '## 🖥️ Stage 3: Frontend & UX Verification'
+            echo
+            echo '| Check | Status | Verification detail |'
+            echo '|---|---|---|'
+            echo '| Component and interaction tests | ${{ job.status }} | Vitest suite must pass. |'
+            echo '| Production bundle | ${{ job.status }} | Vite build must complete. |'
+            echo '| Build artifact | ${{ job.status }} | Compiled frontend is attached to the run. |'
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  dependency-audit:
-    name: Dependency security audit
-    needs: backend-lint
+  security:
+    name: 4. Security & Privacy Audit
+    needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-
       - name: Install pip-audit
         run: python -m pip install pip-audit
-
       - name: Audit Python dependencies
         run: pip-audit -r server/requirements.txt
-
-      - name: Audit Node.js dependencies
+      - name: Audit Node dependencies
         working-directory: client
         run: npm audit --audit-level=high
+      - name: Write security summary
+        if: always()
+        run: |
+          {
+            echo '## 🔐 Stage 4: Security & Privacy Audit'
+            echo
+            echo '| Check | Status | Verification detail |'
+            echo '|---|---|---|'
+            echo '| Python dependency audit | ${{ job.status }} | pip-audit checks declared runtime dependencies. |'
+            echo '| JavaScript dependency audit | ${{ job.status }} | npm audit fails on high or critical advisories. |'
+            echo '| API security regressions | See Stage 2 | Auth, CSRF, session, validation, and secret exposure cases run in pytest. |'
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  pending-tests:
-    name: pending-tests
-    needs: backend-lint
+  integration-performance:
+    name: 5. E2E & Latency Benchmark
+    needs: [backend, frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-
-      - name: Check pending test placeholders
-        run: python scripts/check_test_placeholders.py
-
-  e2e:
-    name: e2e
-    needs: [backend-tests, frontend]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: server/requirements-dev.txt
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: client/package-lock.json
-
       - name: Install backend dependencies
         run: python -m pip install -r server/requirements-dev.txt
-
       - name: Install frontend dependencies
         working-directory: client
         run: npm ci
-
-      - name: Install Playwright dependencies
+      - name: Install browser test dependencies
         working-directory: tests
         run: npm ci
-
       - name: Install Chromium
         working-directory: tests
         run: npx playwright install --with-deps chromium
-
       - name: Run Playwright workflows
+        id: playwright
         working-directory: tests
         run: npm test
-
-      - name: Upload Playwright reports
+      - name: Run 20-user, 30-second authenticated task-list benchmark
+        id: benchmark
+        run: |
+          mkdir -p build/reports
+          python tests/e2e/start_server.py > build/reports/performance-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          READY=0
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5000/api/ready > /dev/null; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$READY" != 1 ]]; then
+            cat build/reports/performance-server.log
+            exit 1
+          fi
+          python tests/performance/tasks_load.py \
+            --vus 20 \
+            --duration 30 \
+            --max-p90-ms 3000 \
+            --output build/reports/performance.json
+      - name: Upload browser and performance reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-e2e-reports
+          name: integration-performance-reports
           path: |
             tests/playwright-report/
             tests/test-results/
+            build/reports/performance.json
+            build/reports/performance-server.log
           if-no-files-found: warn
           retention-days: 30
+      - name: Write integration summary
+        if: always()
+        run: |
+          {
+            echo '## ⚡ Stage 5: E2E & Latency Benchmark'
+            echo
+            echo '| Check | Status | Verification detail |'
+            echo '|---|---|---|'
+            echo '| Playwright Chromium workflows | ${{ steps.playwright.outcome || 'skipped' }} | Real Flask/Vite app with isolated browser data. |'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f build/reports/performance.json ]]; then
+            python scripts/check_performance_report.py build/reports/performance.json --max-p90-ms 3000 >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '| Authenticated performance benchmark | ❌ FAILED | No report was produced. |' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo 'Browser traces, screenshots, and performance report are attached as workflow artifacts when produced.' >> "$GITHUB_STEP_SUMMARY"
+
+  coverage-gate:
+    name: 6. Coverage & Quality Gate
+    needs: [backend, frontend, security, integration-performance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download backend coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage-json
+          path: coverage
+      - name: Enforce line and branch minimums
+        run: python scripts/check_coverage.py coverage/coverage.json --min-statement 80 --min-branch 60 >> "$GITHUB_STEP_SUMMARY"
+      - name: Write quality gate result
+        if: always()
+        run: |
+          {
+            echo '## ✅ Stage 6: Coverage & Quality Gate'
+            echo
+            echo '- Required stages completed: ${{ job.status }}'
+            echo '- Minimums: 80% statement coverage and 60% branch coverage.'
+            echo '- Pending-test inventory is enforced in Stage 1.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   package:
-    name: Package web application release
-    needs:
-      - backend-tests
-      - frontend
-      - dependency-audit
-      - pending-tests
-      - e2e
+    name: 7. Packaging & Distribution
+    needs: [coverage-gate, integration-performance]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.metadata.outputs.version }}
       artifact_name: ${{ steps.metadata.outputs.artifact_name }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-
+          python-version: "3.12"
       - name: Download production frontend bundle
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: client/dist
-
       - name: Determine release version
         id: metadata
         shell: bash
@@ -239,14 +340,12 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "artifact_name=task-manager-webapp-$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Build deployment bundle and checksum
         run: >-
           python scripts/package_release.py
           --version "${{ steps.metadata.outputs.version }}"
           --commit "${GITHUB_SHA}"
           --output-dir build/release
-
       - name: Upload versioned application bundle
         id: upload
         uses: actions/upload-artifact@v4
@@ -257,32 +356,41 @@ jobs:
             build/release/*.sha256
           if-no-files-found: error
           retention-days: 30
-
-      - name: Write CI/CD build summary
+      - name: Write packaging summary
+        if: always()
         shell: bash
         env:
           RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
           RELEASE_ARTIFACT: ${{ steps.metadata.outputs.artifact_name }}
           ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
         run: |
-          PACKAGE="$(find build/release -maxdepth 1 -name '*.zip' -print -quit)"
+          PACKAGE="$(find build/release -maxdepth 1 -name '*.zip' -print -quit 2>/dev/null || true)"
+          if [[ -z "$PACKAGE" ]]; then
+            {
+              echo '## 📦 Stage 7: Packaging & Distribution'
+              echo
+              echo '| Check | Result | Verification detail |'
+              echo '|---|---|---|'
+              echo "| Package job | ${{ job.status }} | No versioned bundle was produced. |"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           SIZE="$(du -h "$PACKAGE" | cut -f1)"
           SHA256="$(cat "${PACKAGE}.sha256")"
           {
-            echo "## Task Manager CI/CD Build Summary"
+            echo '## 📦 Stage 7: Packaging & Distribution'
             echo
-            echo "- **Status:** All required DAG stages passed."
-            echo "- **Version:** ${RELEASE_VERSION}"
-            echo "- **Commit:** ${GITHUB_SHA}"
-            echo "- **Python:** 3.12"
-            echo "- **Artifact:** ${RELEASE_ARTIFACT}"
-            echo "- **Bundle size:** ${SIZE}"
-            echo "- **SHA-256:** `${SHA256}`"
+            echo '| Check | Result | Verification detail |'
+            echo '|---|---|---|'
+            echo "| Package job | ${{ job.status }} | Release bundle built after required stages passed. |"
+            echo "| Version | ${RELEASE_VERSION} | Tag version or commit-specific snapshot. |"
+            echo "| Commit | ${GITHUB_SHA} | Source revision packaged by this run. |"
+            echo "| Artifact | ${RELEASE_ARTIFACT} | ZIP bundle (${SIZE}); checksum ${SHA256}. |"
             if [[ -n "$ARTIFACT_URL" ]]; then
-              echo "- **Download:** [Workflow artifact](${ARTIFACT_URL})"
+              echo "| Download | [Workflow artifact](${ARTIFACT_URL}) | Retained as a run artifact for 30 days. |"
             fi
             echo
-            echo "A version tag publishes this tested bundle as a GitHub Release."
+            echo 'A version tag publishes this tested bundle as a GitHub Release.'
           } >> "$GITHUB_STEP_SUMMARY"
 
   publish-release:
@@ -298,7 +406,6 @@ jobs:
         with:
           name: ${{ needs.package.outputs.artifact_name }}
           path: release-assets
-
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -20,7 +20,7 @@ Status reflects executable evidence. A closed backlog issue alone is not a test 
 | TMA-NF-001 Persistence | SQLite-backed application, migration chain, data survives closing and reopening an independent database session | `server/tests/integration/test_persistence.py` | PASS for session close/reopen; whole-process restart was not benchmarked separately |
 | TMA-NF-002 Performance | 20 concurrent authenticated virtual users request paginated task lists for 30 seconds | `tests/performance/tasks_load.py`; Windows local SQLite run on 12 Nov 2026: 3,786 requests, 0 failures, p50 157.33 ms, p90 172.89 ms, max 270.27 ms, 126.2 requests/s | PASS in the recorded local environment; performance varies by machine and database |
 | TMA-NF-005 Responsive and accessible UI | Responsive pages, keyboard handling, focus management, skip link, contrast improvements | Playwright/Axe viewport checks at 375, 768, and 1440 px; Vitest component suite | PASS for the documented pages and checks |
-| API contract and test traceability | REST reference and OpenAPI specification updated to current routes; test IDs mapped in this matrix and `docs/TEST_PLAN.md` | Review against Flask route registration and test modules; YAML syntax validation | PASS; CI schema validation is added in the separate pipeline PR |
+| API contract and test traceability | REST reference and OpenAPI specification updated to current routes; test IDs mapped in this matrix and `docs/TEST_PLAN.md` | Review against Flask route registration and test modules; Prettier YAML syntax check locally and in Stage 1 | PASS; CI formatting/syntax gate is configured in PR #52 |
 
 ## Current local execution snapshot
 
