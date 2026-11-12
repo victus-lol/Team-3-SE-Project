@@ -14,6 +14,7 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - Dashboard, notification, and task-detail screens now report API failures as recoverable states; dashboard and notification failures can be retried without stale “awaiting implementation” messaging.
 - Dialogs now trap keyboard focus, support Escape, and restore focus on close. The app shell adds a skip link, and text contrast was adjusted after accessibility scans found issues.
 - Live browser checks cover sign-in, task CRUD, keyword/status/priority/overdue filtering, dashboard data, notification read-state, keyboard navigation, mobile widths, and Axe accessibility scans at mobile, tablet, and desktop sizes.
+- CSRF initialization now shares a single in-flight request, preventing duplicate React development-mode startup effects from racing session tokens during sign-in.
 - The frontend feature changes do not modify backend modules. Remaining project work is tracked by its assigned owners.
 - Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
 - The original review-branch dependency findings and migration lint issue were resolved in the merged CI/CD work; the current CI workflows run Ruff, pytest, frontend lint/tests/build, placeholder inventory, pip-audit, and npm audit.
@@ -43,6 +44,7 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat(notifications): implement S2-07 service, API, and deterministic scheduler | 2026-11-02 | Implemented user-scoped notification service/routes, UTC-aware dispatch with injectable provider, manually-driven scheduler, unit/API test cases, and detailed TC-Notify-01 documentation. Run backend tests and PR CI before merge. |
 | fix: improve feature API recovery and empty states | 2026-11-12 | Added clear error/retry messaging for dashboard and notifications, removed stale endpoint placeholders, and covered fallback/retry behavior in component tests. |
 | feat: complete frontend accessibility and integration checks | 2026-11-12 | Added dialog focus handling, skip navigation, contrast fixes, task-card coverage, live Playwright/Axe workflows, and updated the test/handoff guide. Local checks: backend 137 passed/5 skipped; frontend 22 passed, lint/build pass; E2E 13 passed/10 skipped. |
+| fix: deduplicate CSRF initialization on startup | 2026-11-12 | Prevented concurrent CSRF bootstrap requests from racing session cookies in React StrictMode; added a regression test for concurrent initialization. |
 
 ## Remaining integration work
 

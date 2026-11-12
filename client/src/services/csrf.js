@@ -9,25 +9,37 @@
  */
 
 let _csrfToken = null
+let _csrfRequest = null
 
 /**
  * Fetch and store the CSRF token from the backend.
  * Call this once on app startup (in AuthProvider).
  */
-export async function fetchCsrfToken() {
-  try {
-    const response = await fetch('/api/auth/csrf', {
-      method: 'GET',
-      credentials: 'include',
-    })
-    if (response.ok) {
-      const data = await response.json()
-      _csrfToken = data?.data?.csrf_token || null
+export function fetchCsrfToken() {
+  if (_csrfToken) return Promise.resolve(_csrfToken)
+  if (_csrfRequest) return _csrfRequest
+
+  _csrfRequest = (async () => {
+    try {
+      const response = await fetch('/api/auth/csrf', {
+        method: 'GET',
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        _csrfToken = data?.data?.csrf_token || null
+      }
+      return _csrfToken
+    } catch (err) {
+      // Non-fatal: CSRF token will be null; protected routes will fail gracefully
+      console.warn('Failed to fetch CSRF token:', err)
+      return null
+    } finally {
+      _csrfRequest = null
     }
-  } catch (err) {
-    // Non-fatal: CSRF token will be null; protected routes will fail gracefully
-    console.warn('Failed to fetch CSRF token:', err)
-  }
+  })()
+
+  return _csrfRequest
 }
 
 /** Get the currently stored CSRF token. */
@@ -38,5 +50,6 @@ export function getCsrfToken() {
 /** Clear the stored token (e.g. after logout). */
 export function clearCsrfToken() {
   _csrfToken = null
+  _csrfRequest = null
 }
 
