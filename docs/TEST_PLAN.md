@@ -89,7 +89,7 @@ The script creates one cookie/CSRF-authenticated session per virtual user, exerc
 | Performance | 3,786 requests, 0 failures, p50 157.33 ms, p90 172.89 ms, max 270.27 ms, 126.20 requests/s |
 | Alembic migration upgrade | Passed through `2e1b7d5f930c` |
 
-The performance result was measured against the local Windows development server and file-backed SQLite test database. It is evidence for that setup only, not a production capacity guarantee. GitHub Actions will run the load gate and publish its own job summary in the pipeline update.
+The performance result was measured against the local Windows development server and file-backed SQLite test database. It is evidence for that setup only, not a production capacity guarantee. PR #52 configures GitHub Actions to run the same target on an ephemeral Linux runner and report those independent values in Stage 5; the local result is not presented as the CI measurement.
 
 ## Known operational requirements
 

@@ -10,8 +10,8 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - All backend and Playwright cases are active. Latest local suites: backend 167 passed/0 skipped; frontend 27 passed; Playwright 24 passed/0 skipped. Ruff, ESLint, Vite production build, and migrations pass. Backend statement coverage is 84.69% and branch coverage is 64.09% (pytest-cov).
 - A local Windows/SQLite task-list benchmark used 20 authenticated users for 30 seconds: 3,786 requests, 0 errors, p90 172.89 ms. PR #52 configures GitHub Actions to run the same load target and report its JSON result.
 - The existing GitHub Actions workflow runs lint, backend/frontend tests, browser tests, dependency audits, placeholder checks, and packaging. PR #52 adds the seven-stage summaries, load gate, coverage thresholds, and documented DAG.
-- PRs #47–#50 are merged after passing CI. PR #51 completes API documentation, test/requirement traceability, and local performance evidence; PR #52 adds stage summaries, a CI load run, and coverage gates. SMTP credentials and a hosting provider are not configured; reset delivery and live hosting require environment setup.
-- All 32 repository issues are now assigned to milestones by sprint ID: Sprint 1 has 10, Sprint 2 has 12, and Sprint 3 has 10, including already-closed work. The remaining 3 open issues are #24, #25, and #31 after backend feature issues were completed.
+- PRs #47–#51 are merged after passing CI. PR #51 completed API documentation, test/requirement traceability, and local performance evidence; PR #52 adds stage summaries, a CI load run, and coverage gates. SMTP credentials and a hosting provider are not configured; reset delivery and live hosting require environment setup.
+- All 32 repository issues are assigned to milestones by sprint ID: Sprint 1 has 10, Sprint 2 has 12, and Sprint 3 has 10. All currently open issues have been closed by the merged feature, QA, and documentation work.
 
 ## Run locally
 
@@ -46,8 +46,8 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat: add secure password reset flow | 2026-11-12 | PR #50 merged SMTP-configurable reset delivery, hashed single-use/expiring tokens, session revocation, migration, API/UI flows and recovery tests. Backend 167 passed; frontend 27 passed, lint/build clean; Playwright 24 passed; Ruff and migration upgrade passed. SMTP credentials are intentionally not supplied. |
 | test: add task-list performance benchmark and refresh evidence | 2026-11-12 | PR #51 completes the authenticated 20-user/30-second benchmark, current API reference/OpenAPI contract, database schema, traceability matrix, and test reports. Local p90: 172.89 ms; 0 failed requests. Local backend statement coverage: 84.69%; branch coverage: 64.09%. |
 | docs: align API reference and QA traceability with current code | 2026-11-12 | PR #51 documents current endpoint access, request rules, response errors, migrations, test-to-requirement evidence, and separate statement/branch coverage. API contract formatting/syntax and local test evidence were checked. |
+| ci: publish seven-stage DAG summaries and quality gates | 2026-11-12 | Current PR #52 adds connected, numbered stages for lint, backend, frontend, security, E2E/performance, coverage, and packaging. Each stage writes a GitHub Actions Summary table; performance and coverage thresholds are enforced. |
 
 ## Remaining integration work
 
-1. Merge PR #51 after its checks pass; it resolves issues #24, #25, and #31 with test and documentation evidence.
-2. Merge the focused CI workflow update after its checks pass; it adds the seven-stage DAG summaries, performance run, and statement/branch coverage gate.
+1. Merge PR #52 after its required Actions jobs pass. All repository issues are currently closed; reopen only if review finds a concrete gap.

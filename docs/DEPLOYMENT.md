@@ -5,15 +5,23 @@
 The `Task Manager CI/CD` workflow is a dependency graph. Arrows in the GitHub Actions graph represent the `needs` relationships:
 
 ```text
-Code quality and lint
-        ├──> Backend tests (Python 3.12) ──┐
-        ├──> Frontend tests and build ──────┼──> Browser integration tests ──┐
-        ├──> Dependency security audit ─────┤                                ├──> Package release
-        └──> Pending-test metadata check ───┘                                │
-                                                                             └──> GitHub Release (version tags only)
+                         ┌──> 2. Backend API & Regression ──┐
+                         │                                  │
+1. Lint & Code Quality ─┼──> 3. Frontend & UX ─────────────┼──> 5. E2E & Latency ──┐
+                         │                                  │                       │
+                         └──> 4. Security & Privacy ────────┴───────────────────────┤
+                                                                                     v
+                                                              6. Coverage & Quality Gate
+                                                                                     │
+                                                                                     v
+                                                              7. Packaging & Distribution
+                                                                                     │
+                                                                                     └──> GitHub Release (version tags only)
 ```
 
-Pull requests and branch pushes run the quality, backend, frontend, browser, dependency-audit, and pending-test checks. The package job runs only after every required stage succeeds. Each run uploads backend and browser reports, the built frontend, and a combined web-application bundle with a SHA-256 checksum. The package job writes a build summary to the Actions run.
+Pull requests and matching branch pushes run the seven numbered DAG stages. Each job writes a table-based report to its GitHub Actions Summary: lint and contract validation; backend test counts and artifacts; frontend tests/build; dependency audits; browser workflows and measured p50/p90/max/load; statement and branch coverage; and package version, checksum, and artifact link. The coverage gate requires at least 80% statement coverage and 60% branch coverage. The performance gate requires 20 authenticated users for 30 seconds, zero request failures, and p90 at or below 3,000 ms. The package stage runs only after all required checks pass.
+
+The workflow retains JUnit and coverage reports, Playwright traces/screenshots, the measured performance JSON, the compiled frontend, and the versioned application bundle as downloadable run artifacts.
 
 Pushing a version tag such as `v1.0.0` runs the same checks and publishes the tested bundle and checksum as a GitHub Release. Ordinary pushes and pull requests only retain the bundle as a workflow artifact.
 
