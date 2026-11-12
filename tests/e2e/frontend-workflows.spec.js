@@ -111,7 +111,7 @@ test.describe('Frontend feature workflows', () => {
     }
 
     await page.goto('/tasks')
-    await page.getByRole('button', { name: 'Create task' }).click()
+    await page.locator('.page-heading').getByRole('button', { name: 'Create task' }).click()
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByLabel('Task title')).toBeFocused()
     await page.keyboard.press('Shift+Tab')
