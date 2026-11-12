@@ -4,27 +4,14 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 
 ## Current state
 
-- The project is a React/Vite website backed by a Flask API, not a native mobile app.
-- The team documentation, CI configuration, contribution rules, project setup instructions, Flask backend scaffold, and React/Vite client baseline are present.
-- Backend routes and services reflect the existing source baseline; endpoint behavior should be checked against the API documentation and by the backend owners.
-- A responsive application shell, protected routes, and polished login/auth UI are now in place.
-- Task list/details/forms, search and filters, and dashboard views are updated with component coverage.
-- The notifications screen and its component test are now in place.
-- The frontend task list now sends keyword, status, priority, and overdue filters to the task API. Component tests cover request parameters, clearing filters, and retry behavior.
-- Dashboard, notification, and task-detail screens now report API failures as recoverable states; dashboard and notification failures can be retried without stale “awaiting implementation” messaging.
-- Dialogs now trap keyboard focus, support Escape, and restore focus on close. The app shell adds a skip link, and text contrast was adjusted after accessibility scans found issues.
-- Live browser checks cover sign-in, task CRUD, keyword/status/priority/overdue filtering, dashboard data, notification read-state, keyboard navigation, mobile widths, and Axe accessibility scans at mobile, tablet, and desktop sizes.
-- CSRF initialization now shares a single in-flight request, preventing duplicate React development-mode startup effects from racing session tokens during sign-in.
-- The frontend feature changes do not modify backend modules. Remaining project work is tracked by its assigned owners.
-- Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
-- The original review-branch dependency findings and migration lint issue were resolved in the merged CI/CD work; the current CI workflows run Ruff, pytest, frontend lint/tests/build, placeholder inventory, pip-audit, and npm audit.
-- The CI/CD workflow is structured as a GitHub Actions DAG: lint gates backend/frontend checks, those gate browser integration and package creation, and version tags publish the verified web-app bundle plus checksum as a GitHub Release. The project targets one backend runtime, Python 3.12.
-- No hosting provider is configured. GitHub Releases distribute a deployable bundle; live deployment needs a hosting target and credentials.
-- The current `main` includes the notification API and task search/filter APIs; the integration checks in this feature branch exercise those routes without changing backend modules.
-- PR #47 (merged) completes public standard-user registration, category creation, admin user listing, and activates previously skipped backend/browser workflows. It also adds persistent login throttling, API security headers, request-size limits, and the Alembic migration for throttle state. Backend suite: 153 passed; frontend: 25 passed with lint/build clean; E2E passed locally and on GitHub Actions.
-- PR #48 (merged) adds authenticated profile name updates and paginated task-list metadata while preserving the existing task array in `data`. Pagination validation is capped at 100 items per page and remains user-scoped; backend suite: 159 passed, frontend: 25 passed, and Playwright: 23 passed.
-- PR #49 (merged) records administrator user-list and audit-history access in a secret-free, database-backed audit log. The read endpoint is admin-only and paginated; full backend suite: 163 passed. This covers the only sensitive admin operation currently implemented; no admin mutation endpoints exist yet.
-- PR #50 work (current branch) adds an SMTP-backed password reset request/confirmation flow. Tokens are hashed at rest, single-use, time-limited, and successful reset increments an auth version to revoke existing sessions. The frontend includes request and new-password screens; delivery requires SMTP configuration from `.env.example`. Local checks: backend 167 passed; frontend 27 passed with lint/build clean; Playwright 24 passed; migration upgrade and Ruff passed.
+- The deliverable is a React/Vite website backed by a Flask API.
+- Registration, task/category APIs, search/filter/sorting, dashboard, notifications, admin access, profile update, password reset, audit events, session throttling, security headers, request-size limits, migrations, and task pagination are implemented.
+- The frontend has responsive pages, protected routes, form validation, keyboard/focus support, accessible status messaging, and task/dashboard/notification/account recovery flows.
+- All backend and Playwright cases are active. Latest local suites: backend 167 passed/0 skipped; frontend 27 passed; Playwright 24 passed/0 skipped. Ruff, ESLint, Vite production build, and migrations pass. Backend statement coverage is 84.69% and branch coverage is 64.09% (pytest-cov).
+- A local Windows/SQLite task-list benchmark used 20 authenticated users for 30 seconds: 3,786 requests, 0 errors, p90 172.89 ms. PR #52 configures GitHub Actions to run the same load target and report its JSON result.
+- The existing GitHub Actions workflow runs lint, backend/frontend tests, browser tests, dependency audits, placeholder checks, and packaging. PR #52 adds the seven-stage summaries, load gate, coverage thresholds, and documented DAG.
+- PRs #47–#50 are merged after passing CI. PR #51 completes API documentation, test/requirement traceability, and local performance evidence; PR #52 adds stage summaries, a CI load run, and coverage gates. SMTP credentials and a hosting provider are not configured; reset delivery and live hosting require environment setup.
+- All 32 repository issues are now assigned to milestones by sprint ID: Sprint 1 has 10, Sprint 2 has 12, and Sprint 3 has 10, including already-closed work. The remaining 3 open issues are #24, #25, and #31 after backend feature issues were completed.
 
 ## Run locally
 
@@ -54,14 +41,12 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | ci: add DAG-based web app release pipeline | 2026-11-12 | Connected quality, backend/frontend verification, E2E, dependency audits, and artifact packaging with explicit job dependencies; publishes a ZIP and SHA-256 checksum to GitHub Releases on version tags. Added release bundle and deployment instructions. |
 | feat: complete account and core API workflows | 2026-11-12 | PR #47 implemented public user registration, category creation, admin user listing, and activated the backend/browser workflows. Merged after backend, frontend, E2E, security audit, placeholder, and package checks passed. |
 | feat: harden login and API responses | 2026-11-12 | PR #47 added persistent login throttling, configurable security headers/request size, and a migration; verified in the same full CI run. |
-| feat: add profile editing and paginated task lists | 2026-11-12 | Current PR #48 adds self-profile name updates and safe, user-scoped task pagination with metadata while retaining the existing task response array. Local checks: backend 159 passed; frontend 25 passed, lint/build passed; Playwright 23 passed. |
-| feat: add administrator audit trail | 2026-11-12 | Current PR #49 adds a secret-free audit model, migration, admin-only listing endpoint, and records access to user/audit listings. Full backend suite: 163 passed; Ruff clean. |
-| feat: add secure password reset flow | 2026-11-12 | Current PR #50 adds SMTP-configurable reset delivery, hashed single-use/expiring tokens, session revocation, migration, API and UI flows, and recovery tests. Local verification: backend 167 passed; frontend 27 passed, lint/build clean; Playwright 24 passed; Ruff and migration upgrade passed. SMTP credentials are intentionally not supplied. |
+| feat: add profile editing and paginated task lists | 2026-11-12 | PR #48 merged self-profile name updates and safe, user-scoped task pagination with metadata while retaining the existing task response array. Backend 159 passed; frontend 25 passed; Playwright 23 passed. |
+| feat: add administrator audit trail | 2026-11-12 | PR #49 merged a secret-free audit model, migration, admin-only listing endpoint, and audit events for user/audit listing access. Backend 163 passed; Ruff clean. |
+| feat: add secure password reset flow | 2026-11-12 | PR #50 merged SMTP-configurable reset delivery, hashed single-use/expiring tokens, session revocation, migration, API/UI flows and recovery tests. Backend 167 passed; frontend 27 passed, lint/build clean; Playwright 24 passed; Ruff and migration upgrade passed. SMTP credentials are intentionally not supplied. |
+| test: add task-list performance benchmark and refresh evidence | 2026-11-12 | PR #51 completes the authenticated 20-user/30-second benchmark, current API reference/OpenAPI contract, database schema, traceability matrix, and test reports. Local p90: 172.89 ms; 0 failed requests. Local backend statement coverage: 84.69%; branch coverage: 64.09%. |
 
 ## Remaining integration work
 
-1. Complete and merge the password-reset batch after its checks pass.
-2. Replace the placeholder load test with an executable benchmark and record a reproducible local result.
-3. Refresh the traceability/API/test evidence documents against the current code and final CI runs.
-4. Extend the CI DAG with clear stage summaries and quality/performance gates; do not claim a deployment because no hosting target is configured.
-5. Reconcile the remaining GitHub issue backlog against verified implementation, then close only the issues whose acceptance criteria are met.
+1. Merge PR #51 after its checks pass; it resolves issues #24, #25, and #31 with test and documentation evidence.
+2. Merge the focused CI workflow update after its checks pass; it adds the seven-stage DAG summaries, performance run, and statement/branch coverage gate.
