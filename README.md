@@ -73,3 +73,9 @@ task-manager/
 └── docs/             # Comprehensive architectural & process documentation
 ```
 
+## CI/CD
+
+The GitHub Actions workflow at `.github/workflows/ci.yml` runs as a dependency graph: linting gates backend/frontend checks, those checks gate browser integration, and every required check gates release packaging. Python 3.12 is the project's declared backend runtime. The pipeline also runs dependency audits, uploads test reports, builds the frontend, and packages the Flask API plus frontend into a web-app bundle with a SHA-256 checksum.
+
+Pull requests and branch builds retain the bundle as a workflow artifact. Pushing a version tag such as `v1.0.0` publishes the same tested bundle as a GitHub Release. The repository does not configure a live hosting target; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for bundle contents and deployment requirements.
+

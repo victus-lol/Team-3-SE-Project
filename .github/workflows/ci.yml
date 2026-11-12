@@ -1,30 +1,34 @@
-name: CI Pipeline
+name: Task Manager CI/CD
 
 on:
   push:
     branches: [main, 'feature/**', 'fix/**', 'test/**']
+    tags: ['v*']
   pull_request:
     branches: [main]
 
 permissions:
   contents: read
 
+concurrency:
+  group: task-manager-cicd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   backend-lint:
     name: backend-lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
+          cache: pip
           cache-dependency-path: server/requirements-dev.txt
 
-      - name: Install backend dependencies
+      - name: Install backend quality tools
         run: python -m pip install -r server/requirements-dev.txt
 
       - name: Run Ruff
@@ -32,16 +36,16 @@ jobs:
 
   backend-tests:
     name: backend-tests
+    needs: backend-lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
+          cache: pip
           cache-dependency-path: server/requirements-dev.txt
 
       - name: Install backend dependencies
@@ -49,12 +53,12 @@ jobs:
 
       - name: Run Pytest with coverage
         working-directory: server
-        run: |
-          python -m pytest \
-            --cov=app \
-            --cov-report=term-missing \
-            --cov-report=xml:coverage.xml \
-            --junitxml=junit.xml
+        run: >-
+          python -m pytest
+          --cov=app
+          --cov-report=term-missing
+          --cov-report=xml:coverage.xml
+          --junitxml=junit.xml
 
       - name: Upload backend test reports
         uses: actions/upload-artifact@v4
@@ -65,22 +69,23 @@ jobs:
             server/junit.xml
             server/coverage.xml
           if-no-files-found: warn
+          retention-days: 30
 
   frontend:
     name: frontend
+    needs: backend-lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: .nvmrc
+          cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         working-directory: client
         run: npm ci
 
@@ -92,47 +97,97 @@ jobs:
         working-directory: client
         run: npm test
 
-      - name: Production build
+      - name: Build production frontend
         working-directory: client
         run: npm run build
 
-  e2e:
-    name: e2e
-    runs-on: ubuntu-latest
+      - name: Upload production frontend bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: client/dist/
+          if-no-files-found: error
+          retention-days: 30
 
+  dependency-audit:
+    name: Dependency security audit
+    needs: backend-lint
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: server/requirements-dev.txt
-
-      - name: Install backend dependencies
-        run: python -m pip install -r server/requirements-dev.txt
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: .nvmrc
+
+      - name: Install pip-audit
+        run: python -m pip install pip-audit
+
+      - name: Audit Python dependencies
+        run: pip-audit -r server/requirements.txt
+
+      - name: Audit Node.js dependencies
+        working-directory: client
+        run: npm audit --audit-level=high
+
+  pending-tests:
+    name: pending-tests
+    needs: backend-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check pending test placeholders
+        run: python scripts/check_test_placeholders.py
+
+  e2e:
+    name: e2e
+    needs: [backend-tests, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: server/requirements-dev.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - name: Install frontend dependencies for the E2E web server
+      - name: Install backend dependencies
+        run: python -m pip install -r server/requirements-dev.txt
+
+      - name: Install frontend dependencies
         working-directory: client
         run: npm ci
 
-      - name: Install Playwright test dependencies
+      - name: Install Playwright dependencies
         working-directory: tests
-        run: npm install --no-audit --no-fund
+        run: npm ci
 
-      - name: Install Chromium browser
+      - name: Install Chromium
         working-directory: tests
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright E2E tests
+      - name: Run Playwright workflows
         working-directory: tests
         run: npm test
 
@@ -145,18 +200,114 @@ jobs:
             tests/playwright-report/
             tests/test-results/
           if-no-files-found: warn
+          retention-days: 30
 
-  pending-tests:
-    name: pending-tests
+  package:
+    name: Package web application release
+    needs:
+      - backend-tests
+      - frontend
+      - dependency-audit
+      - pending-tests
+      - e2e
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      artifact_name: ${{ steps.metadata.outputs.artifact_name }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Check pending test placeholders
-        run: python scripts/check_test_placeholders.py
+      - name: Download production frontend bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: client/dist
+
+      - name: Determine release version
+        id: metadata
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="snapshot-${GITHUB_SHA::7}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=task-manager-webapp-$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build deployment bundle and checksum
+        run: >-
+          python scripts/package_release.py
+          --version "${{ steps.metadata.outputs.version }}"
+          --commit "${GITHUB_SHA}"
+          --output-dir build/release
+
+      - name: Upload versioned application bundle
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.metadata.outputs.artifact_name }}
+          path: |
+            build/release/*.zip
+            build/release/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Write CI/CD build summary
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_ARTIFACT: ${{ steps.metadata.outputs.artifact_name }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          PACKAGE="$(find build/release -maxdepth 1 -name '*.zip' -print -quit)"
+          SIZE="$(du -h "$PACKAGE" | cut -f1)"
+          SHA256="$(cat "${PACKAGE}.sha256")"
+          {
+            echo "## Task Manager CI/CD Build Summary"
+            echo
+            echo "- **Status:** All required DAG stages passed."
+            echo "- **Version:** ${RELEASE_VERSION}"
+            echo "- **Commit:** ${GITHUB_SHA}"
+            echo "- **Python:** 3.12"
+            echo "- **Artifact:** ${RELEASE_ARTIFACT}"
+            echo "- **Bundle size:** ${SIZE}"
+            echo "- **SHA-256:** `${SHA256}`"
+            if [[ -n "$ARTIFACT_URL" ]]; then
+              echo "- **Download:** [Workflow artifact](${ARTIFACT_URL})"
+            fi
+            echo
+            echo "A version tag publishes this tested bundle as a GitHub Release."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish-release:
+    name: Publish versioned GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tested release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.package.outputs.artifact_name }}
+          path: release-assets
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.package.outputs.version }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG"
+          release-assets/task-manager-webapp-"$RELEASE_VERSION".zip
+          release-assets/task-manager-webapp-"$RELEASE_VERSION".zip.sha256
+          --title "Task Manager $RELEASE_TAG"
+          --generate-notes
