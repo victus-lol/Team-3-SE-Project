@@ -43,7 +43,7 @@ export default function DashboardPage() {
         const message = summaryResult.status === 'rejected'
           ? summaryResult.reason?.message
           : summaryResult.value?.data?.error?.message
-        setSummaryError(message || 'Summary data is not available yet.')
+        setSummaryError(message || 'Summary data could not be loaded.')
       }
       if (tasksResult.status === 'fulfilled' && tasksResult.value.ok && tasksResult.value.data?.success) {
         setTasks(Array.isArray(tasksResult.value.data.data) ? tasksResult.value.data.data : [])
@@ -51,7 +51,7 @@ export default function DashboardPage() {
         const message = tasksResult.status === 'rejected'
           ? tasksResult.reason?.message
           : tasksResult.value?.data?.error?.message
-        setTasksError(message || 'Task data is not available yet.')
+        setTasksError(message || 'Task data could not be loaded.')
       }
       setLoading(false)
     }
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                 <Link className="text-link" to="/tasks">View all</Link>
               </div>
               {tasks === null ? (
-                <div className="empty-state"><Icon name="list" size={21} /><strong>Tasks are waiting on the API</strong><p>{tasksError || 'Connect the task service to load your work.'}</p></div>
+                <div className="empty-state"><Icon name="list" size={21} /><strong>Task data could not be loaded</strong><p>{tasksError || 'Try again after checking your connection.'}</p></div>
               ) : upcomingTasks.length ? (
                 <div className="task-preview-list">
                   {upcomingTasks.map((task) => (

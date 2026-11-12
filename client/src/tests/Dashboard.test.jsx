@@ -43,4 +43,13 @@ describe('DashboardPage', () => {
     const completedCard = screen.getByText('Completed').closest('article')
     expect(within(completedCard).getByText('1')).toBeInTheDocument()
   })
+
+  it('shows an error and fallback metrics when both dashboard endpoints fail', async () => {
+    mocks.getSummary.mockResolvedValue({ ok: false, data: { error: { message: 'Summary service unavailable.' } } })
+    mocks.getTasks.mockResolvedValue({ ok: false, data: { error: { message: 'Task service unavailable.' } } })
+    render(<MemoryRouter><DashboardPage /></MemoryRouter>)
+
+    expect(await screen.findByText(/Task data is currently unavailable from the API/)).toBeInTheDocument()
+    expect(screen.getByText('Summary service unavailable.')).toBeInTheDocument()
+  })
 })

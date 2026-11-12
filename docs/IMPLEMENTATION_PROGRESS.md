@@ -11,6 +11,7 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - Task list/details/forms, search and filters, and dashboard views are updated with component coverage.
 - The notifications screen and its component test are now in place.
 - The frontend task list now sends keyword, status, priority, and overdue filters to the task API. Component tests cover request parameters, clearing filters, and retry behavior.
+- Dashboard, notification, and task-detail screens now report API failures as recoverable states; dashboard and notification failures can be retried without stale “awaiting implementation” messaging.
 - This delivery is being recorded in small commits. Browser integration and accessibility results will be added to this handoff as those verification batches are completed.
 - The frontend feature changes do not modify backend modules. Remaining project work is tracked by its assigned owners.
 - Backend ownership remains with the assigned team members; Aaryan’s feature changes are scoped to `client/src/` and this guide.
@@ -39,6 +40,7 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat: complete notifications interface | 2026-11-01 | Added the notifications screen behavior and its component test; it depends on the backend notifications endpoints. |
 | docs: record CI findings for integration | 2026-11-01 | Recorded that frontend and placeholder CI pass, while existing backend lint and dependency audit findings need backend-owner follow-up. |
 | feat(notifications): implement S2-07 service, API, and deterministic scheduler | 2026-11-02 | Implemented user-scoped notification service/routes, UTC-aware dispatch with injectable provider, manually-driven scheduler, unit/API test cases, and detailed TC-Notify-01 documentation. Run backend tests and PR CI before merge. |
+| fix: improve feature API recovery and empty states | 2026-11-12 | Added clear error/retry messaging for dashboard and notifications, removed stale endpoint placeholders, and covered fallback/retry behavior in component tests. |
 
 ## Remaining integration work
 
