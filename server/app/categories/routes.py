@@ -4,11 +4,13 @@ Owner: Aadi Kore (PES2UG24CS006)
 Sprint: S2 (S2-01)
 """
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
+from ..common.exceptions import ValidationError
 from ..common.responses import success_response
 from ..middleware.authorization import login_required_json
+from .service import create_category as add_category
 from .service import list_categories as get_categories
 
 categories_bp = Blueprint("categories", __name__)
@@ -25,12 +27,8 @@ def list_categories():
 @categories_bp.route("", methods=["POST"])
 @login_required_json
 def create_category():
-    return jsonify(
-        {
-            "success": False,
-            "error": {
-                "code": "NOT_IMPLEMENTED",
-                "message": "Category creation is pending scope approval.",
-            },
-        }
-    ), 501
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        raise ValidationError("A valid JSON request body is required.")
+    category = add_category(current_user.id, data.get("name"))
+    return jsonify(success_response(category.to_dict(), "Category created successfully.")), 201

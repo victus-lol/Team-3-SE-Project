@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { signIn } from './helpers.js'
 
 /**
  * Reminders and Notifications E2E tests.
@@ -8,12 +9,19 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Reminders and Notifications Flow', () => {
-  test.skip('view notification alerts in panel', async ({ page }) => {
-    // TC-Notify-01 | Owner: Akash | Requirement: TMA-F-040 | Backlog: S2-09
+  test('view notification alerts in panel', async ({ page }) => {
+    await signIn(page)
+    await page.goto('/notifications')
+    await expect(page.getByText('E2E reminder for notification workflow')).toBeVisible()
   })
 
-  test.skip('mark a notification as read updates status', async ({ page }) => {
-    // TC-Notify-01 | Owner: Akash | Requirement: TMA-F-041 | Backlog: S2-09
+  test('mark a notification as read updates status', async ({ page }) => {
+    await signIn(page)
+    await page.goto('/notifications')
+    const reminder = page.locator('.task-preview').filter({ hasText: 'E2E unread reminder for read-state workflow' })
+    await reminder.getByRole('button', { name: 'Mark as read' }).click()
+    await expect(reminder.getByText('Read', { exact: true })).toBeVisible()
+    await expect(reminder.getByRole('button', { name: 'Mark as read' })).toHaveCount(0)
   })
 })
 

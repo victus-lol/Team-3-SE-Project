@@ -80,6 +80,17 @@ def initialize_database() -> None:
                     status="pending",
                 )
             )
+        if not Notification.query.filter_by(
+            user_id=e2e_user.id,
+            message="E2E unread reminder for read-state workflow",
+        ).first():
+            db.session.add(
+                Notification(
+                    user_id=e2e_user.id,
+                    message="E2E unread reminder for read-state workflow",
+                    status="pending",
+                )
+            )
         db.session.commit()
 
     print("E2E database initialized with isolated test user accounts.")

@@ -73,3 +73,72 @@ class TestMeEndpoint:
         response = client.get("/api/auth/me")
 
         assert response.status_code == 401
+
+
+class TestRegistrationEndpoint:
+    def test_register_creates_standard_user(self, client):
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "name": "  New User  ",
+                "email": "New.User@example.com",
+                "password": "securepass123",
+                "role": "admin",
+            },
+        )
+
+        assert response.status_code == 201
+        user = response.get_json()["data"]
+        assert user["name"] == "New User"
+        assert user["email"] == "new.user@example.com"
+        assert user["role"] == "user"
+        assert "password_hash" not in user
+
+    def test_register_rejects_duplicate_email_case_insensitively(self, client, test_user):
+        response = client.post(
+            "/api/auth/register",
+            json={"name": "Another User", "email": test_user.email.upper(), "password": "securepass123"},
+        )
+
+        assert response.status_code == 409
+
+    def test_register_rejects_invalid_input(self, client):
+        response = client.post(
+            "/api/auth/register",
+            json={"name": " ", "email": "not-an-email", "password": "short"},
+        )
+
+        assert response.status_code == 400
+
+
+class TestLoginThrottle:
+    def test_repeated_failures_are_temporarily_locked(self, app, client, test_user, monkeypatch):
+        monkeypatch.setitem(app.config, "LOGIN_MAX_ATTEMPTS", 2)
+        monkeypatch.setitem(app.config, "LOGIN_LOCKOUT_SECONDS", 60)
+        credentials = {"email": test_user.email, "password": "incorrectpass"}
+
+        assert client.post("/api/auth/login", json=credentials).status_code == 401
+        assert client.post("/api/auth/login", json=credentials).status_code == 401
+        response = client.post("/api/auth/login", json={"email": test_user.email, "password": "password123"})
+
+        assert response.status_code == 429
+        assert response.get_json()["error"]["code"] == "RATE_LIMITED"
+
+    def test_lockout_expires_after_configured_cooldown(self, app, monkeypatch):
+        from app.auth.throttle import is_login_locked, record_failed_login
+
+        monkeypatch.setitem(app.config, "LOGIN_MAX_ATTEMPTS", 1)
+        monkeypatch.setitem(app.config, "LOGIN_LOCKOUT_SECONDS", 60)
+        monkeypatch.setitem(app.config, "LOGIN_ATTEMPT_WINDOW_SECONDS", 300)
+        record_failed_login("cooldown@example.com", "127.0.0.1", now=1000)
+
+        assert is_login_locked("cooldown@example.com", "127.0.0.1", now=1059)
+        assert not is_login_locked("cooldown@example.com", "127.0.0.1", now=1061)
+
+    def test_successful_login_clears_prior_failures(self, app, client, test_user, monkeypatch):
+        monkeypatch.setitem(app.config, "LOGIN_MAX_ATTEMPTS", 2)
+        client.post("/api/auth/login", json={"email": test_user.email, "password": "incorrectpass"})
+
+        response = client.post("/api/auth/login", json={"email": test_user.email, "password": "password123"})
+
+        assert response.status_code == 200
