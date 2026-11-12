@@ -12,6 +12,8 @@ export const authApi = {
   logout: () => api.post('/auth/logout', {}),
   getMe: () => api.get('/auth/me'),
   register: (userData) => api.post('/auth/register', userData),
+  requestPasswordReset: (email) => api.post('/auth/password-reset/request', { email }),
+  confirmPasswordReset: (token, password) => api.post('/auth/password-reset/confirm', { token, password }),
   getCsrf: () => api.get('/auth/csrf'),
 }
 

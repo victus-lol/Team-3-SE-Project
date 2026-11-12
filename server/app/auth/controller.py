@@ -4,6 +4,7 @@ Owner: Balaji Gowda S R (PES2UG25CS804)
 Sprint: S1 (S1-03)
 """
 
+from flask import session
 from flask_login import login_user, logout_user
 
 from ..common.exceptions import (
@@ -37,6 +38,7 @@ def handle_login(request_data: dict) -> dict:
 
     if not login_user(user):
         raise AuthenticationError("Invalid email or password.")
+    session["_auth_version"] = user.session_version
 
     # User.to_dict() excludes password_hash.
     return user.to_dict()

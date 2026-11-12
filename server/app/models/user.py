@@ -38,6 +38,7 @@ class User(UserMixin, db.Model):
         server_default="user",
     )
     is_active = db.Column(db.Boolean, nullable=False, default=True, server_default="1")
+    session_version = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     created_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,

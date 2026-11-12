@@ -7,6 +7,7 @@ import ProtectedRoute from '../components/ProtectedRoute.jsx'
 
 const LoginPage = lazy(() => import('../features/auth/LoginPage.jsx'))
 const RegisterPage = lazy(() => import('../features/auth/RegisterPage.jsx'))
+const PasswordResetPage = lazy(() => import('../features/auth/PasswordResetPage.jsx'))
 const TaskList = lazy(() => import('../features/tasks/TaskList.jsx'))
 const TaskDetails = lazy(() => import('../features/tasks/TaskDetails.jsx'))
 const DashboardPage = lazy(() => import('../features/dashboard/DashboardPage.jsx'))
@@ -21,6 +22,7 @@ export default function AppRouter() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/reset-password" element={<PasswordResetPage />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />

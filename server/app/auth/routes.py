@@ -14,6 +14,7 @@ from ..common.responses import (
 )
 from ..middleware.authorization import login_required_json
 from .controller import handle_login, handle_logout
+from .password_reset import confirm_password_reset, request_password_reset
 from .service import create_registered_user, update_user_profile
 from .throttle import clear_login_failures, is_login_locked, record_failed_login
 
@@ -88,3 +89,22 @@ def register():
         raise ValidationError("A valid JSON request body is required.")
     user = create_registered_user(data.get("name"), data.get("email"), data.get("password"))
     return jsonify(success_response(user.to_dict(), "Account created successfully.")), 201
+
+
+@auth_bp.route("/password-reset/request", methods=["POST"])
+def password_reset_request():
+    """Request a reset email while keeping account existence private."""
+    data = request.get_json(silent=True)
+    email = data.get("email") if isinstance(data, dict) else None
+    request_password_reset(email)
+    return jsonify(success_response({}, "If the account exists, a reset link will be sent.")), 202
+
+
+@auth_bp.route("/password-reset/confirm", methods=["POST"])
+def password_reset_confirm():
+    """Set a new password using a single-use reset token."""
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        raise ValidationError("A valid JSON request body is required.")
+    confirm_password_reset(data.get("token"), data.get("password"))
+    return jsonify(success_response({}, "Password updated. Sign in with your new password.")), 200

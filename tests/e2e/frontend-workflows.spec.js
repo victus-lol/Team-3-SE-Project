@@ -10,6 +10,13 @@ async function signIn(page) {
 }
 
 test.describe('Frontend feature workflows', () => {
+  test('password recovery request confirms without exposing account existence', async ({ page }) => {
+    await page.goto('/reset-password')
+    await page.getByLabel('Email address').fill('unknown@example.com')
+    await page.getByRole('button', { name: 'Send reset link' }).click()
+    await expect(page.getByRole('status')).toContainText('If an account matches that address')
+  })
+
   test('task CRUD and server-side search and filters work together', async ({ page }) => {
     await signIn(page)
     await page.goto('/tasks')
