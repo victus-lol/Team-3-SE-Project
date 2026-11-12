@@ -9,6 +9,49 @@ class TestTasksApiLive:
     def test_get_task_unauthenticated_returns_401(self, client):
         assert client.get("/api/tasks/1").status_code == 401
 
+    def test_task_list_includes_pagination_metadata(self, auth_client, db, test_user):
+        from app.models.task import Task
+
+        db.session.add_all(
+            [Task(owner_id=test_user.id, title=f"Page task {index}") for index in range(3)]
+        )
+        db.session.commit()
+
+        first = auth_client.get("/api/tasks?page=1&per_page=2").get_json()
+        final = auth_client.get("/api/tasks?page=2&per_page=2").get_json()
+
+        assert len(first["data"]) == 2
+        assert first["pagination"] == {
+            "page": 1,
+            "per_page": 2,
+            "total_items": 3,
+            "total_pages": 2,
+            "has_next": True,
+            "has_previous": False,
+        }
+        assert len(final["data"]) == 1
+        assert final["pagination"]["has_previous"] is True
+
+    def test_task_list_rejects_invalid_page_values(self, auth_client):
+        for query in ("page=0", "page=abc", "per_page=101"):
+            assert auth_client.get(f"/api/tasks?{query}").status_code == 400
+
+    def test_task_list_pagination_remains_user_scoped(self, auth_client, db, test_user, test_admin):
+        from app.models.task import Task
+
+        db.session.add_all(
+            [
+                Task(owner_id=test_user.id, title="Visible"),
+                Task(owner_id=test_admin.id, title="Private"),
+            ]
+        )
+        db.session.commit()
+
+        response = auth_client.get("/api/tasks?page=1&per_page=10")
+
+        assert [task["title"] for task in response.get_json()["data"]] == ["Visible"]
+        assert response.get_json()["pagination"]["total_items"] == 1
+
 
 class TestTasksCrud:
     def test_create_task_authenticated(self, auth_client):

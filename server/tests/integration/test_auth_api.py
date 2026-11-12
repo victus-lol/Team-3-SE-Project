@@ -74,6 +74,24 @@ class TestMeEndpoint:
 
         assert response.status_code == 401
 
+    def test_me_updates_only_display_name(self, auth_client, test_user):
+        response = auth_client.patch("/api/auth/me", json={"name": "  Updated Name  "})
+
+        assert response.status_code == 200
+        assert response.get_json()["data"]["name"] == "Updated Name"
+        assert test_user.name == "Updated Name"
+        assert "password_hash" not in response.get_json()["data"]
+
+    def test_me_rejects_protected_profile_fields(self, auth_client, test_user):
+        response = auth_client.patch("/api/auth/me", json={"role": "admin", "name": "Changed"})
+
+        assert response.status_code == 400
+        assert test_user.role == "user"
+        assert test_user.name == "Test User"
+
+    def test_me_update_requires_authentication(self, client):
+        assert client.patch("/api/auth/me", json={"name": "Updated"}).status_code == 401
+
 
 class TestRegistrationEndpoint:
     def test_register_creates_standard_user(self, client):

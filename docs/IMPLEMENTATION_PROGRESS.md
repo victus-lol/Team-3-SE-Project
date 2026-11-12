@@ -21,6 +21,8 @@ Handoff notes for Aaryan Dubey (PES2UG24CS016), owner of `client/src/` per `docs
 - The CI/CD workflow is structured as a GitHub Actions DAG: lint gates backend/frontend checks, those gate browser integration and package creation, and version tags publish the verified web-app bundle plus checksum as a GitHub Release. The project targets one backend runtime, Python 3.12.
 - No hosting provider is configured. GitHub Releases distribute a deployable bundle; live deployment needs a hosting target and credentials.
 - The current `main` includes the notification API and task search/filter APIs; the integration checks in this feature branch exercise those routes without changing backend modules.
+- PR #47 (`codex/project-completion`) completes public standard-user registration, category creation, admin user listing, and activates previously skipped backend/browser workflows. It also adds persistent login throttling, API security headers, request-size limits, and the Alembic migration for throttle state. Local backend suite: 153 passed; frontend: 25 passed with lint/build clean; E2E browser suite passed locally after fixing the notification row selector. GitHub checks are running before merge.
+- PR #48 work (current branch) adds authenticated profile name updates and paginated task-list metadata while preserving the existing task array in `data`. Pagination validation is capped at 100 items per page and remains user-scoped; backend suite: 159 passed, frontend: 25 passed, and Playwright: 23 passed.
 
 ## Run locally
 
@@ -48,8 +50,14 @@ Use the root README for backend setup and the `client/` instructions. From `clie
 | feat: complete frontend accessibility and integration checks | 2026-11-12 | Added dialog focus handling, skip navigation, contrast fixes, task-card coverage, live Playwright/Axe workflows, and updated the test/handoff guide. Local checks: backend 137 passed/5 skipped; frontend 22 passed, lint/build pass; E2E 13 passed/10 skipped. |
 | fix: deduplicate CSRF initialization on startup | 2026-11-12 | Prevented concurrent CSRF bootstrap requests from racing session cookies in React StrictMode; added a regression test for concurrent initialization. |
 | ci: add DAG-based web app release pipeline | 2026-11-12 | Connected quality, backend/frontend verification, E2E, dependency audits, and artifact packaging with explicit job dependencies; publishes a ZIP and SHA-256 checksum to GitHub Releases on version tags. Added release bundle and deployment instructions. |
+| feat: complete account and core API workflows | 2026-11-12 | PR #47 implemented public user registration, category creation, admin user listing, and activated the backend/browser workflows. Merged after backend, frontend, E2E, security audit, placeholder, and package checks passed. |
+| feat: harden login and API responses | 2026-11-12 | PR #47 added persistent login throttling, configurable security headers/request size, and a migration; verified in the same full CI run. |
+| feat: add profile editing and paginated task lists | 2026-11-12 | Current PR #48 adds self-profile name updates and safe, user-scoped task pagination with metadata while retaining the existing task response array. Local checks: backend 159 passed; frontend 25 passed, lint/build passed; Playwright 23 passed. |
 
 ## Remaining integration work
 
-1. The assigned frontend implementation and integration checks are complete on this feature branch. Open a PR for team review before merging.
-2. Other team members own remaining skipped admin/reminder/sorting E2E cases and broader performance, persistence, and security validation noted in `docs/TEST_PLAN.md`.
+1. Complete and merge the profile/pagination, audit logging, and password-reset batches after their checks pass.
+2. Replace the placeholder load test with an executable benchmark and record a reproducible local result.
+3. Refresh the traceability/API/test evidence documents against the current code and final CI runs.
+4. Extend the CI DAG with clear stage summaries and quality/performance gates; do not claim a deployment because no hosting target is configured.
+5. Reconcile the remaining GitHub issue backlog against verified implementation, then close only the issues whose acceptance criteria are met.

@@ -14,7 +14,7 @@ from ..common.responses import (
 )
 from ..middleware.authorization import login_required_json
 from .controller import handle_login, handle_logout
-from .service import create_registered_user
+from .service import create_registered_user, update_user_profile
 from .throttle import clear_login_failures, is_login_locked, record_failed_login
 
 auth_bp = Blueprint("auth", __name__)
@@ -69,6 +69,15 @@ def me():
             "User details retrieved.",
         )
     ), 200
+
+
+@auth_bp.route("/me", methods=["PATCH"])
+@login_required_json
+def update_me():
+    """Update the authenticated user's display name."""
+    data = request.get_json(silent=True)
+    user = update_user_profile(current_user, data)
+    return jsonify(success_response(user.to_dict(), "Profile updated.")), 200
 
 
 @auth_bp.route("/register", methods=["POST"])

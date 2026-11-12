@@ -86,6 +86,21 @@ def create_registered_user(name: str, email: str, password: str) -> User:
     return user
 
 
+def update_user_profile(user: User, data: dict) -> User:
+    """Update the caller's approved profile fields only."""
+    if not isinstance(data, dict) or not data:
+        raise ValidationError("At least one profile field must be provided.")
+    unsupported = set(data) - {"name"}
+    if unsupported:
+        raise ValidationError("Only the name field can be updated.")
+    name = data.get("name")
+    if not isinstance(name, str) or not name.strip() or len(name.strip()) > 128:
+        raise ValidationError("Name must contain 1 to 128 characters.")
+    user.name = name.strip()
+    db.session.commit()
+    return user
+
+
 def get_user_by_email(email: str) -> User | None:
     """Look up a user using a normalized email address."""
 
